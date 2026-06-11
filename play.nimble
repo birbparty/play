@@ -23,6 +23,8 @@ task test, "Run the play test suite":
   # Keep this task as the aggregation point as future beads add bddy binaries.
   exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -r tests/bindings/test_soloud_raw.nim"
+  exec "nim check --path:src -d:playPlatformVita tests/bindings/test_soloud_raw.nim"
+  exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_soloud_raw.nim"
   exec "nim c --path:src -r tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim"
@@ -40,6 +42,8 @@ task test, "Run the play test suite":
 task testTap, "Run the play test suite with TAP output":
   exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -r tests/bindings/test_soloud_raw.nim"
+  exec "nim check --path:src -d:playPlatformVita tests/bindings/test_soloud_raw.nim"
+  exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_soloud_raw.nim"
   exec "nim c --path:src -r tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim"
@@ -49,6 +53,8 @@ task testJunit, "Run the play test suite with JUnit output":
   mkDir "tests/results"
   exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -r tests/bindings/test_soloud_raw.nim"
+  exec "nim check --path:src -d:playPlatformVita tests/bindings/test_soloud_raw.nim"
+  exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_soloud_raw.nim"
   exec "nim c --path:src -r tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim"

@@ -8,6 +8,7 @@ static:
   doAssert sizeof(cfloat) == 4
   doAssert sizeof(cdouble) == 8
   doAssert SOLOUD_AUTO == 0'u32
+  doAssert SOLOUD_VITA_HOMEBREW == 13'u32
   doAssert SOLOUD_CTRU_NDSP == 14'u32
   doAssert SOLOUD_MINIAUDIO == 15'u32
   doAssert SOLOUD_NOSOUND == 16'u32

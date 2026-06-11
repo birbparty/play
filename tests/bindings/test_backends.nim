@@ -9,6 +9,8 @@ static:
 
   when defined(playPlatformVita):
     doAssert rawBackendId(vitaHomebrewBackend) == SOLOUD_VITA_HOMEBREW
+  else:
+    doAssert not compiles(vitaHomebrewBackend)
 
   when defined(playPlatform3ds):
     doAssert rawBackendId(ctruNdspBackend) == SOLOUD_CTRU_NDSP
