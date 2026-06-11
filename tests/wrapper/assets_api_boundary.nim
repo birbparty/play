@@ -15,6 +15,12 @@ when compiles(audioSource(sound)):
 when compiles(rawHandle(newEngine())):
   {.error: "private engine rawHandle bridge must not be public".}
 
+when compiles(rawBus(newEngine(), musicBus)):
+  {.error: "private engine rawBus bridge must not be public".}
+
+when compiles(rawBusHandle(newEngine(), musicBus)):
+  {.error: "private engine rawBusHandle bridge must not be public".}
+
 when compiles(Wav):
   {.error: "raw Wav type must not be exported by play/soloud".}
 

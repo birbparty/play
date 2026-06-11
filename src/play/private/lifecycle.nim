@@ -3,16 +3,42 @@
 import play/backends
 import play/bindings/soloud_raw as raw
 import play/errors
+import play/types as publicTypes
 
 type
   Engine* = ref object
     handle: raw.Soloud
     initialized: bool
+    musicBus: raw.Bus
+    musicBusHandle: raw.VoiceHandle
+    sfxBus: raw.Bus
+    sfxBusHandle: raw.VoiceHandle
+    uiBus: raw.Bus
+    uiBusHandle: raw.VoiceHandle
+
+proc destroyBuses(engine: Engine) =
+  if engine == nil:
+    return
+
+  engine.musicBusHandle = 0'u32
+  engine.sfxBusHandle = 0'u32
+  engine.uiBusHandle = 0'u32
+
+  if engine.musicBus != nil:
+    raw.Bus_destroy(engine.musicBus)
+    engine.musicBus = nil
+  if engine.sfxBus != nil:
+    raw.Bus_destroy(engine.sfxBus)
+    engine.sfxBus = nil
+  if engine.uiBus != nil:
+    raw.Bus_destroy(engine.uiBus)
+    engine.uiBus = nil
 
 proc resetHandle(engine: Engine) =
   if engine == nil or engine.handle == nil:
     return
 
+  engine.destroyBuses()
   raw.Soloud_destroy(engine.handle)
   engine.handle = nil
   engine.initialized = false
@@ -45,6 +71,24 @@ proc newEngine*(): Engine =
   result = Engine()
   discard result.ensureHandle()
 
+proc initBus(engine: Engine, bus: var raw.Bus, busHandle: var raw.VoiceHandle): bool =
+  bus = raw.Bus_create()
+  if bus == nil:
+    return false
+
+  busHandle = raw.Soloud_play(engine.handle, raw.AudioSource(bus))
+  if busHandle == 0'u32:
+    raw.Bus_destroy(bus)
+    bus = nil
+    return false
+
+  true
+
+proc initBuses(engine: Engine): bool =
+  engine.initBus(engine.musicBus, engine.musicBusHandle) and
+    engine.initBus(engine.sfxBus, engine.sfxBusHandle) and
+    engine.initBus(engine.uiBus, engine.uiBusHandle)
+
 proc isInitialized*(engine: Engine): bool =
   engine != nil and engine.initialized
 
@@ -67,6 +111,12 @@ proc init*(engine: Engine, options = initOptions()): PlayResult =
   if code != 0:
     return engine.failedInit(options, code)
 
+  if not engine.initBuses():
+    engine.destroyBuses()
+    raw.Soloud_deinit(engine.handle)
+    engine.resetHandle()
+    return failure(allocationError("SoLoud fixed bus allocation failed"))
+
   engine.initialized = true
   success()
 
@@ -75,6 +125,7 @@ proc shutdown*(engine: Engine) =
     return
 
   raw.Soloud_stopAll(engine.handle)
+  engine.destroyBuses()
   raw.Soloud_deinit(engine.handle)
   engine.initialized = false
 
@@ -97,3 +148,29 @@ proc rawHandle*(engine: Engine): raw.Soloud =
     return nil
 
   engine.handle
+
+proc rawBus*(engine: Engine, bus: publicTypes.Bus): raw.Bus =
+  if engine == nil or engine.handle == nil or not engine.initialized or not bus.isValid:
+    return nil
+
+  if bus == publicTypes.musicBus:
+    engine.musicBus
+  elif bus == publicTypes.sfxBus:
+    engine.sfxBus
+  elif bus == publicTypes.uiBus:
+    engine.uiBus
+  else:
+    nil
+
+proc rawBusHandle*(engine: Engine, bus: publicTypes.Bus): raw.VoiceHandle =
+  if engine == nil or engine.handle == nil or not engine.initialized or not bus.isValid:
+    return 0'u32
+
+  if bus == publicTypes.musicBus:
+    engine.musicBusHandle
+  elif bus == publicTypes.sfxBus:
+    engine.sfxBusHandle
+  elif bus == publicTypes.uiBus:
+    engine.uiBusHandle
+  else:
+    0'u32
