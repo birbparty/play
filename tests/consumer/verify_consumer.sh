@@ -24,9 +24,6 @@ exe_path() {
 
 repo_nim_path=$(nim_path "$repo_root")
 repo_file_url="file://$repo_nim_path"
-case "$repo_nim_path" in
-  ?:/*) repo_file_url="file:///$repo_nim_path" ;;
-esac
 
 cleanup() {
   rm -rf "$tmp_root"
