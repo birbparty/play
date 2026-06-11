@@ -28,6 +28,7 @@ task test, "Run the play test suite":
   exec "nim c --path:src --path:examples -r examples/bus_volume_demo.nim --quiet"
   exec "nim c --path:src --path:examples -r examples/music_fades.nim --quiet"
   exec "nim c --path:src --path:examples -r examples/sfx_keypress.nim --keys=sq --quiet"
+  exec "sh scripts/build_desktop_examples.sh --smoke"
   exec "nim c --path:src --path:examples --path:tests -r tests/examples/test_example_assets.nim"
   exec "nim c --path:src --path:examples --path:tests -r tests/examples/test_bus_volume_demo.nim"
   exec "nim c --path:src --path:examples --path:tests -r tests/examples/test_music_fades.nim"
