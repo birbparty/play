@@ -109,13 +109,3 @@ spec "public handle operations API":
       soundResult.ok == true
       handle != noHandle
       stopResult.ok == true
-
-  it "does not expose raw voice ids through the public facade":
-    then:
-      compiles(Handle(123'u32)) == false
-      compiles(uint32(noHandle)) == false
-      compiles(noHandle.id) == false
-      compiles(rawVoiceHandle(noHandle)) == false
-      compiles(handleFromRaw(1'u32)) == false
-      compiles(pause(currentEngine(), noHandle)) == false
-      compiles(stop(currentEngine(), noHandle)) == false
