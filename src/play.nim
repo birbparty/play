@@ -5,11 +5,13 @@
 ## playback, handle, bus, and fade APIs are implemented.
 
 import play/assets
+import play/buses
 import play/lifecycle
 import play/playback
 import play/types
 
 export assets
+export buses
 export lifecycle
 export playback
 export types
