@@ -14,4 +14,14 @@ For each committed fixture, add provenance next to the asset or in a manifest:
 Do not add proprietary SDK files, firmware, sample-pack audio, game assets, or
 assets with unclear redistribution rights.
 
-No fixtures are committed yet.
+Generated fixtures live under `generated/` and are produced by:
+
+```sh
+nim r tools/generate_fixtures.nim
+```
+
+The generator writes deterministic WAV tones directly and uses `ffmpeg` only for
+Ogg Vorbis encoding. Normal reruns preserve committed OGG bytes; use
+`nim r tools/generate_fixtures.nim -- --force` only when intentionally
+refreshing encoded OGG fixtures. See `generated/README.md` for exact fixture
+metadata.
