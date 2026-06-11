@@ -5,7 +5,7 @@ import play/private/types as privateTypes
 
 export Sound, Music
 export dispose, isDisposed
-export privateTypes except handleFromRaw, rawVoiceHandle
+export privateTypes except handleFromRaw, rawVoiceHandle, isValid
 
 type
   Bus* = object

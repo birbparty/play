@@ -39,12 +39,14 @@ spec "public playback API":
       let soundResult = loadSound(fixturePath("generated", "tone_sfx.wav"))
       var initResult: PlayResult
       var handle = noHandle
+      var valid = false
       var musicVoices = 0'u32
       var sfxVoices = 0'u32
       var uiVoices = 0'u32
     act:
       initResult = init(initOptions(backend = nullBackend))
       handle = play(soundResult.sound)
+      valid = handle.isValid
       musicVoices = busVoiceCount(musicBus)
       sfxVoices = busVoiceCount(sfxBus)
       uiVoices = busVoiceCount(uiBus)
@@ -53,7 +55,7 @@ spec "public playback API":
     then:
       initResult.ok == true
       soundResult.ok == true
-      handle.isValid == true
+      valid == true
       musicVoices == 0'u32
       sfxVoices == 1'u32
       uiVoices == 0'u32
@@ -63,12 +65,14 @@ spec "public playback API":
       let soundResult = loadSound(fixturePath("generated", "tone_sfx.wav"))
       var initResult: PlayResult
       var handle = noHandle
+      var valid = false
       var musicVoices = 0'u32
       var sfxVoices = 0'u32
       var uiVoices = 0'u32
     act:
       initResult = init(initOptions(backend = nullBackend))
       handle = play(soundResult.sound, uiBus)
+      valid = handle.isValid
       musicVoices = busVoiceCount(musicBus)
       sfxVoices = busVoiceCount(sfxBus)
       uiVoices = busVoiceCount(uiBus)
@@ -77,7 +81,7 @@ spec "public playback API":
     then:
       initResult.ok == true
       soundResult.ok == true
-      handle.isValid == true
+      valid == true
       musicVoices == 0'u32
       sfxVoices == 0'u32
       uiVoices == 1'u32
@@ -87,12 +91,14 @@ spec "public playback API":
       let musicResult = loadMusic(fixturePath("generated", "tone_music.ogg"))
       var initResult: PlayResult
       var handle = noHandle
+      var valid = false
       var musicVoices = 0'u32
       var sfxVoices = 0'u32
       var uiVoices = 0'u32
     act:
       initResult = init(initOptions(backend = nullBackend))
       handle = playMusic(musicResult.music)
+      valid = handle.isValid
       musicVoices = busVoiceCount(musicBus)
       sfxVoices = busVoiceCount(sfxBus)
       uiVoices = busVoiceCount(uiBus)
@@ -101,7 +107,7 @@ spec "public playback API":
     then:
       initResult.ok == true
       musicResult.ok == true
-      handle.isValid == true
+      valid == true
       musicVoices == 1'u32
       sfxVoices == 0'u32
       uiVoices == 0'u32
