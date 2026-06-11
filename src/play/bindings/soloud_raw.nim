@@ -54,6 +54,8 @@ proc Soloud_getBackendId*(aSoloud: Soloud): cuint {.importc, cdecl.}
 proc Soloud_getBackendString*(aSoloud: Soloud): cstring {.importc, cdecl.}
 proc Soloud_getBackendSamplerate*(aSoloud: Soloud): cuint {.importc, cdecl.}
 proc Soloud_getBackendBufferSize*(aSoloud: Soloud): cuint {.importc, cdecl.}
+proc Soloud_getActiveVoiceCount*(aSoloud: Soloud): cuint {.importc, cdecl.}
+proc Soloud_getMaxActiveVoiceCount*(aSoloud: Soloud): cuint {.importc, cdecl.}
 proc Soloud_setGlobalVolume*(aSoloud: Soloud, aVolume: cfloat) {.importc, cdecl.}
 
 proc Soloud_play*(aSoloud: Soloud, aSound: AudioSource): VoiceHandle {.importc, cdecl.}

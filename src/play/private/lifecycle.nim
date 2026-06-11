@@ -4,6 +4,7 @@ import play/backends
 import play/bindings/soloud_raw as raw
 import play/errors
 import play/types as publicTypes
+import play/voices
 
 type
   Engine* = ref object
@@ -15,6 +16,7 @@ type
     sfxBusHandle: raw.VoiceHandle
     uiBus: raw.Bus
     uiBusHandle: raw.VoiceHandle
+    voiceOptions: VoiceOptions
 
 proc destroyBuses(engine: Engine) =
   if engine == nil:
@@ -69,7 +71,34 @@ proc ensureHandle(engine: Engine): bool =
 
 proc newEngine*(): Engine =
   result = Engine()
+  result.voiceOptions = voiceOptions()
   discard result.ensureHandle()
+
+proc setVoiceOptions*(engine: Engine, options: VoiceOptions): PlayResult =
+  if engine == nil:
+    return failure(invalidHandleError("play engine is not initialized"))
+  if engine.initialized:
+    return failure(initError("voice options must be set before engine initialization", 0))
+  if options.maxActiveVoices < minimumMaxActiveVoices:
+    return failure(initError("max active voices must leave room for fixed buses", 0))
+
+  engine.voiceOptions = options
+  success()
+
+proc activeVoiceLimit*(engine: Engine): cuint =
+  if engine == nil:
+    return 0'u32
+
+  if engine.initialized and engine.handle != nil:
+    return raw.Soloud_getMaxActiveVoiceCount(engine.handle)
+
+  engine.voiceOptions.maxActiveVoices
+
+proc activeVoiceCount*(engine: Engine): cuint =
+  if engine == nil or engine.handle == nil:
+    return 0'u32
+
+  raw.Soloud_getActiveVoiceCount(engine.handle)
 
 proc initBus(engine: Engine, bus: var raw.Bus, busHandle: var raw.VoiceHandle): bool =
   bus = raw.Bus_create()
@@ -110,6 +139,12 @@ proc init*(engine: Engine, options = initOptions()): PlayResult =
   )
   if code != 0:
     return engine.failedInit(options, code)
+
+  let voiceCode = raw.Soloud_setMaxActiveVoiceCount(engine.handle, engine.voiceOptions.maxActiveVoices)
+  if voiceCode != 0:
+    raw.Soloud_deinit(engine.handle)
+    engine.resetHandle()
+    return failure(initError("Failed to configure SoLoud active voice limit", voiceCode))
 
   if not engine.initBuses():
     engine.destroyBuses()

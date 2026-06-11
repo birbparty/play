@@ -14,6 +14,7 @@ import wrapper/errors_spec
 import wrapper/fades_spec
 import wrapper/handles_spec
 import wrapper/lifecycle_spec
+import wrapper/voice_limits_spec
 {.warning[UnusedImport]: on.}
 
 spec "play package":
