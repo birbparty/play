@@ -18,8 +18,12 @@ type
     fadeOutScheduled*: bool
 
 proc defaultMusicFadeConfig*(): MusicFadeConfig =
+  when defined(playPlatform3ds) or defined(playPlatformVita):
+    let options = initOptions()
+  else:
+    let options = initOptions(backend = nullBackend)
   MusicFadeConfig(
-    options: initOptions(backend = nullBackend),
+    options: options,
     holdMs: 25,
     verbose: false
   )

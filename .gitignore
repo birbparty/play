@@ -1,6 +1,7 @@
 nimcache/
 nimblecache/
 htmldocs/
+build/
 examples/phase1_public_api
 examples/phase1_public_api.exe
 tests/examples/test_example_assets

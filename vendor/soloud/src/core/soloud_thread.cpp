@@ -25,10 +25,12 @@ freely, subject to the following restrictions:
 #if defined(_WIN32)||defined(_WIN64)
 #include <windows.h>
 #elif defined(__3DS__)
+extern "C" {
 #include <3ds/os.h>
 #include <3ds/svc.h>
 #include <3ds/synchronization.h>
 #include <3ds/thread.h>
+}
 #else
 #include <inttypes.h>
 #include <pthread.h>

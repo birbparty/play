@@ -1,4 +1,6 @@
-import std/[os, strutils, terminal]
+import std/[os, strutils]
+when not (defined(playPlatform3ds) or defined(playPlatformVita)):
+  import std/terminal
 
 import play
 import common/assets
@@ -19,8 +21,12 @@ type
     quitRequested*: bool
 
 proc defaultSfxKeypressConfig*(): SfxKeypressConfig =
+  when defined(playPlatform3ds) or defined(playPlatformVita):
+    let options = initOptions()
+  else:
+    let options = initOptions(backend = nullBackend)
   SfxKeypressConfig(
-    options: initOptions(backend = nullBackend),
+    options: options,
     keys: "s",
     holdMs: 25,
     verbose: false
@@ -64,12 +70,18 @@ proc runInteractiveKeys(
   activeHandles: var seq[Handle],
   demoResult: var SfxKeypressResult
 ) =
-  if config.verbose:
-    echo "Press s or space for SFX, q to quit."
+  when defined(playPlatform3ds) or defined(playPlatformVita):
+    discard config
+    discard sound
+    discard activeHandles
+    discard demoResult
+  else:
+    if config.verbose:
+      echo "Press s or space for SFX, q to quit."
 
-  while true:
-    if not playForKey(getch(), config, sound, activeHandles, demoResult):
-      break
+    while true:
+      if not playForKey(getch(), config, sound, activeHandles, demoResult):
+        break
 
 proc runSfxKeypressDemo*(config = defaultSfxKeypressConfig()): SfxKeypressResult =
   let initResult = init(config.options)
