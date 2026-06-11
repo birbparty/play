@@ -1,4 +1,5 @@
 import play
+import common/assets
 
 proc logFailure(label: string, result: PlayResult) =
   if not result.ok:
@@ -16,7 +17,7 @@ proc main() =
     discard setSfxVolume(1.0'f32)
     discard setUiVolume(0.8'f32)
 
-    let click = loadSound("assets/click.wav")
+    let click = loadExampleSound(clickSfx)
     if click.ok:
       let handle = play(click.sound, sfxBus)
       if handle.isValid:
@@ -27,7 +28,7 @@ proc main() =
         discard stop(handle)
       click.sound.dispose()
 
-    let music = loadMusic("assets/theme.ogg")
+    let music = loadExampleMusic(themeMusic)
     if music.ok:
       let handle = fadeInMusic(music.music, 1.0, 0.7'f32)
       if handle.isValid:

@@ -24,6 +24,8 @@ requires "https://github.com/mattsp1290/bddy#34287484337fbad6626525062fe27d28fcb
 task test, "Run the play test suite":
   # Keep this task as the aggregation point as future beads add bddy binaries.
   exec "sh tests/consumer/verify_consumer.sh"
+  exec "nim c --path:src --path:examples examples/phase1_public_api.nim"
+  exec "nim c --path:src --path:examples --path:tests -r tests/examples/test_example_assets.nim"
   exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -r tests/bindings/test_soloud_raw.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_soloud_raw.nim"
@@ -48,7 +50,7 @@ task test, "Run the play test suite":
   exec "nim c --path:src --path:tests -r tests/api/test_public_api.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_types.nim"
   exec "nim c --path:src --path:tests -r tests/fixtures/test_fixtures.nim"
-  exec "nim c --path:src --path:tests -r tests/test_all.nim"
+  exec "nim c --path:src --path:examples --path:tests -r tests/test_all.nim"
 
 task testTap, "Run the play test suite with TAP output":
   exec "nim c --path:src tests/test_soloud_compile.nim"
@@ -58,7 +60,7 @@ task testTap, "Run the play test suite with TAP output":
   exec "nim c --path:src -r tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim"
-  exec "nim c --path:src --path:tests -d:bddyTap -r tests/test_all.nim"
+  exec "nim c --path:src --path:examples --path:tests -d:bddyTap -r tests/test_all.nim"
 
 task testJunit, "Run the play test suite with JUnit output":
   mkDir "tests/results"
@@ -70,4 +72,4 @@ task testJunit, "Run the play test suite with JUnit output":
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim"
   # bddyJunit is a strdefine; keep the path in the same quoted compiler argument.
-  exec "nim c --path:src --path:tests \"-d:bddyJunit:tests/results/test_all.xml\" -r tests/test_all.nim"
+  exec "nim c --path:src --path:examples --path:tests \"-d:bddyJunit:tests/results/test_all.xml\" -r tests/test_all.nim"

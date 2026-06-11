@@ -3,6 +3,8 @@ nimblecache/
 htmldocs/
 examples/phase1_public_api
 examples/phase1_public_api.exe
+tests/examples/test_example_assets
+tests/examples/test_example_assets.exe
 tests/test_all
 tests/test_all.exe
 tests/test_soloud_compile
