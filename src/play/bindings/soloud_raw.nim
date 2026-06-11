@@ -77,6 +77,7 @@ proc Soloud_stop*(aSoloud: Soloud, aVoiceHandle: VoiceHandle) {.importc, cdecl.}
 proc Soloud_stopAll*(aSoloud: Soloud) {.importc, cdecl.}
 proc Soloud_setPause*(aSoloud: Soloud, aVoiceHandle: VoiceHandle, aPause: cint) {.importc, cdecl.}
 proc Soloud_setLooping*(aSoloud: Soloud, aVoiceHandle: VoiceHandle, aLooping: cint) {.importc, cdecl.}
+proc Soloud_getVolume*(aSoloud: Soloud, aVoiceHandle: VoiceHandle): cfloat {.importc, cdecl.}
 proc Soloud_setVolume*(aSoloud: Soloud, aVoiceHandle: VoiceHandle, aVolume: cfloat) {.importc, cdecl.}
 proc Soloud_isValidVoiceHandle*(aSoloud: Soloud, aVoiceHandle: VoiceHandle): cint {.importc, cdecl.}
 proc Soloud_setMaxActiveVoiceCount*(aSoloud: Soloud, aVoiceCount: cuint): SoloudResult {.importc, cdecl.}

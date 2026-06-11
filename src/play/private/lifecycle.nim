@@ -10,12 +10,19 @@ type
     handle: raw.Soloud
     initialized: bool
     musicBus: raw.Bus
+    musicBusHandle: raw.VoiceHandle
     sfxBus: raw.Bus
+    sfxBusHandle: raw.VoiceHandle
     uiBus: raw.Bus
+    uiBusHandle: raw.VoiceHandle
 
 proc destroyBuses(engine: Engine) =
   if engine == nil:
     return
+
+  engine.musicBusHandle = 0'u32
+  engine.sfxBusHandle = 0'u32
+  engine.uiBusHandle = 0'u32
 
   if engine.musicBus != nil:
     raw.Bus_destroy(engine.musicBus)
@@ -64,17 +71,23 @@ proc newEngine*(): Engine =
   result = Engine()
   discard result.ensureHandle()
 
-proc initBus(engine: Engine, bus: var raw.Bus): bool =
+proc initBus(engine: Engine, bus: var raw.Bus, busHandle: var raw.VoiceHandle): bool =
   bus = raw.Bus_create()
   if bus == nil:
     return false
 
-  raw.Soloud_play(engine.handle, raw.AudioSource(bus)) != 0'u32
+  busHandle = raw.Soloud_play(engine.handle, raw.AudioSource(bus))
+  if busHandle == 0'u32:
+    raw.Bus_destroy(bus)
+    bus = nil
+    return false
+
+  true
 
 proc initBuses(engine: Engine): bool =
-  engine.initBus(engine.musicBus) and
-    engine.initBus(engine.sfxBus) and
-    engine.initBus(engine.uiBus)
+  engine.initBus(engine.musicBus, engine.musicBusHandle) and
+    engine.initBus(engine.sfxBus, engine.sfxBusHandle) and
+    engine.initBus(engine.uiBus, engine.uiBusHandle)
 
 proc isInitialized*(engine: Engine): bool =
   engine != nil and engine.initialized
@@ -148,3 +161,16 @@ proc rawBus*(engine: Engine, bus: publicTypes.Bus): raw.Bus =
     engine.uiBus
   else:
     nil
+
+proc rawBusHandle*(engine: Engine, bus: publicTypes.Bus): raw.VoiceHandle =
+  if engine == nil or engine.handle == nil or not engine.initialized or not bus.isValid:
+    return 0'u32
+
+  if bus == publicTypes.musicBus:
+    engine.musicBusHandle
+  elif bus == publicTypes.sfxBus:
+    engine.sfxBusHandle
+  elif bus == publicTypes.uiBus:
+    engine.uiBusHandle
+  else:
+    0'u32

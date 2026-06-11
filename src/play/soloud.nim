@@ -12,4 +12,4 @@ export backends
 export buses
 export errors
 export handles
-export lifecycle except rawHandle, rawBus
+export lifecycle except rawHandle, rawBus, rawBusHandle

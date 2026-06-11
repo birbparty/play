@@ -22,11 +22,12 @@ proc setMasterVolume*(engine: Engine, volume: float32): PlayResult =
   success()
 
 proc setBusVolume(engine: Engine, bus: publicTypes.Bus, volume: float32): PlayResult =
-  let rawBus = engine.rawBus(bus)
-  if rawBus == nil:
+  let soloud = engine.rawHandle()
+  let busHandle = engine.rawBusHandle(bus)
+  if soloud == nil or busHandle == 0'u32:
     return invalidBus()
 
-  raw.Bus_setVolume(rawBus, cfloat(volume))
+  raw.Soloud_setVolume(soloud, busHandle, cfloat(volume))
   success()
 
 proc setMusicVolume*(engine: Engine, volume: float32): PlayResult =

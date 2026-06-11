@@ -1,6 +1,17 @@
 import bddy
 import common/test_helpers
+import play/bindings/soloud_raw as raw
+import play/private/lifecycle as privateLifecycle
 import play/soloud
+import play/types as publicTypes
+
+proc activeBusVolume(engine: privateLifecycle.Engine, bus: publicTypes.Bus): float32 =
+  let soloud = engine.rawHandle()
+  let handle = engine.rawBusHandle(bus)
+  if soloud == nil or handle == 0'u32:
+    return -1.0'f32
+
+  float32(raw.Soloud_getVolume(soloud, handle))
 
 spec "SoLoud fixed bus routing":
   it "initializes fixed buses once and applies bus volumes":
@@ -27,6 +38,34 @@ spec "SoLoud fixed bus routing":
       musicVolume.ok == true
       sfxVolume.ok == true
       uiVolume.ok == true
+
+  it "applies fixed bus volume to active bus voice handles":
+    given:
+      let engine = newEngine()
+      var initResult: PlayResult
+      var musicVolume: PlayResult
+      var sfxVolume: PlayResult
+      var uiVolume: PlayResult
+      var musicActiveVolume = 0.0'f32
+      var sfxActiveVolume = 0.0'f32
+      var uiActiveVolume = 0.0'f32
+    act:
+      initResult = engine.init(initOptions(backend = nullBackend))
+      musicVolume = engine.setMusicVolume(0.125'f32)
+      sfxVolume = engine.setSfxVolume(0.25'f32)
+      uiVolume = engine.setUiVolume(0.5'f32)
+      musicActiveVolume = engine.activeBusVolume(musicBus)
+      sfxActiveVolume = engine.activeBusVolume(sfxBus)
+      uiActiveVolume = engine.activeBusVolume(uiBus)
+      engine.destroy()
+    then:
+      initResult.ok == true
+      musicVolume.ok == true
+      sfxVolume.ok == true
+      uiVolume.ok == true
+      musicActiveVolume == 0.125'f32
+      sfxActiveVolume == 0.25'f32
+      uiActiveVolume == 0.5'f32
 
   it "routes sounds to sfx by default and selected fixed buses explicitly":
     given:
@@ -103,3 +142,29 @@ spec "SoLoud fixed bus routing":
       sfxVolume.error.kind == invalidHandle
       uiVolume.ok == false
       uiVolume.error.kind == invalidHandle
+
+  it "recreates fixed buses after shutdown and reinit":
+    given:
+      let engine = newEngine()
+      let soundResult = loadSound(fixturePath("generated", "tone_sfx.wav"))
+      var firstInit: PlayResult
+      var secondInit: PlayResult
+      var handle = noHandle
+      var valid = false
+      var uiVolume: PlayResult
+    act:
+      firstInit = engine.init(initOptions(backend = nullBackend))
+      engine.shutdown()
+      secondInit = engine.init(initOptions(backend = nullBackend))
+      uiVolume = engine.setUiVolume(0.5'f32)
+      handle = engine.playSound(soundResult.sound, uiBus)
+      valid = engine.isValid(handle)
+      soundResult.sound.dispose()
+      engine.destroy()
+    then:
+      firstInit.ok == true
+      secondInit.ok == true
+      soundResult.ok == true
+      uiVolume.ok == true
+      handle.isValid == true
+      valid == true
