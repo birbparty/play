@@ -5,9 +5,10 @@ birbparty/soloud snapshot for `play-eo8`.
 
 ## Snapshot
 
-- Source checkout: `~/git/soloud`
-- Vendored snapshot: `vendor/soloud/`
-- Fork commit evaluated through vendor: `412011ec5c950ebf85f717b57722bb9298329686`
+- Reference checkout: `~/git/soloud` at
+  `412011ec5c950ebf85f717b57722bb9298329686`
+- Evaluated tree: `vendor/soloud/`, using the vendored files from that fork
+  snapshot
 - Backend source: `vendor/soloud/src/backend/vita_homebrew/soloud_vita_homebrew.cpp`
 
 No SoLoud fork patch was required for this evaluation, so `vendor/soloud/` was
@@ -34,20 +35,60 @@ The required core pieces also compile with the same flags:
 - `vendor/soloud/src/core/soloud.cpp`
 - `vendor/soloud/src/core/soloud_thread.cpp`
 
-A broader static archive was built from `soloud_c.cpp`, the SoLoud core closure,
-and `vita_homebrew`:
+A broader static archive was built from `soloud_c.cpp`, the SoLoud core closure
+currently mirrored by `src/play/private/soloud_sources.nim`, and
+`vita_homebrew` in place of the host headless backends:
 
 ```sh
 /tmp/play-soloud-vita-build/libsoloud_vita_homebrew.a
 ```
 
-The archive size was about 257 KiB.
+The archive size was about 257 KiB. The archive contained:
+
+```text
+vendor_soloud_src_backend_vita_homebrew_soloud_vita_homebrew_cpp.o
+vendor_soloud_src_c_api_soloud_c_cpp.o
+vendor_soloud_src_core_soloud_audiosource_cpp.o
+vendor_soloud_src_core_soloud_bus_cpp.o
+vendor_soloud_src_core_soloud_core_3d_cpp.o
+vendor_soloud_src_core_soloud_core_basicops_cpp.o
+vendor_soloud_src_core_soloud_core_faderops_cpp.o
+vendor_soloud_src_core_soloud_core_filterops_cpp.o
+vendor_soloud_src_core_soloud_core_getters_cpp.o
+vendor_soloud_src_core_soloud_core_setters_cpp.o
+vendor_soloud_src_core_soloud_core_voicegroup_cpp.o
+vendor_soloud_src_core_soloud_core_voiceops_cpp.o
+vendor_soloud_src_core_soloud_cpp.o
+vendor_soloud_src_core_soloud_fader_cpp.o
+vendor_soloud_src_core_soloud_fft_cpp.o
+vendor_soloud_src_core_soloud_fft_lut_cpp.o
+vendor_soloud_src_core_soloud_file_cpp.o
+vendor_soloud_src_core_soloud_filter_cpp.o
+vendor_soloud_src_core_soloud_misc_cpp.o
+vendor_soloud_src_core_soloud_queue_cpp.o
+vendor_soloud_src_core_soloud_thread_cpp.o
+```
 
 ## Link Status
 
 A minimal executable that initializes `SoLoud::Soloud::VITA_HOMEBREW` failed to
 link with the current `nim_vita.cfg`-style library set because pthread symbols
 were unresolved from both libstdc++ and SoLoud's generic thread implementation.
+
+The smoke object was built from:
+
+```cpp
+#include "soloud.h"
+
+int main() {
+  SoLoud::Soloud soloud;
+  return soloud.init(SoLoud::Soloud::CLIP_ROUNDOFF,
+                     SoLoud::Soloud::VITA_HOMEBREW,
+                     44100,
+                     2048,
+                     2);
+}
+```
 
 The missing symbols included:
 
@@ -79,6 +120,16 @@ Adding `-lpthread` to the grouped VitaSDK runtime libraries fixed the link:
 
 The linked smoke ELF was produced at `/tmp/play_vita_link_smoke.elf`.
 
+This maps to the current `nim_vita.cfg` link group: add `-lpthread` inside the
+`--start-group` / `--end-group` runtime set, next to `-lstdc++`.
+
+Artifact hashes from this evaluation:
+
+```text
+e4143542feeb98a0d48800a9f1a67a887fd22d3d3ab0e4a203aef68643deb650  /tmp/play-soloud-vita-build/libsoloud_vita_homebrew.a
+36d5351cb1bf18c2a090c64c8663ee6f2b6e096a57a61fe7ff4a98dc56c94ac1  /tmp/play_vita_link_smoke.elf
+```
+
 ## Warnings
 
 The backend compiles cleanly without `-Wall`. With `-Wall -Wextra`, VitaSDK GCC
@@ -103,10 +154,26 @@ patches this backend in the fork.
 should switch the Vita source closure to the real backend and add `-lpthread` to
 the Vita link group.
 
+Follow-up integration checklist:
+
+- In `src/play/private/soloud_sources.nim`, define `WITH_VITA_HOMEBREW` for
+  `playPlatformVita`.
+- Compile `backend/vita_homebrew/soloud_vita_homebrew.cpp` for
+  `playPlatformVita`.
+- Stop compiling `backend/nosound` and `backend/null` for Vita once the real
+  backend is enabled.
+- Add `-lpthread` inside the grouped VitaSDK runtime libraries in
+  `nim_vita.cfg`.
+- Add a Vita link smoke target that exercises `SOLOUD_VITA_HOMEBREW`.
+
 ## Conclusion
 
 The existing SoLoud `vita_homebrew` backend builds under VitaSDK as-is. No
 birbparty/soloud fork fix or re-vendor was required for this evaluation.
+
+Runtime caveat: the backend currently returns `INVALID_PARAMETER` unless
+`aSamplerate == 44100` and `aChannels == 2`, so Play's Vita integration should
+keep defaults aligned or validate overrides before calling `Soloud_initEx`.
 
 Required link libraries for a real Vita backend link are:
 
