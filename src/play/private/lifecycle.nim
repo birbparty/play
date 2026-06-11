@@ -91,3 +91,9 @@ proc activeBackend*(engine: Engine): Backend =
     return defaultBackend
 
   Backend(raw.Soloud_getBackendId(engine.handle))
+
+proc rawHandle*(engine: Engine): raw.Soloud =
+  if engine == nil or engine.handle == nil or not engine.initialized:
+    return nil
+
+  engine.handle
