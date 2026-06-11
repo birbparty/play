@@ -1,6 +1,8 @@
 nimcache/
 nimblecache/
 htmldocs/
+examples/phase1_public_api
+examples/phase1_public_api.exe
 tests/test_all
 tests/test_all.exe
 tests/test_soloud_compile
