@@ -15,10 +15,12 @@ const
 
 {.passC: "-I" & soloudInclude.}
 
-# Keep backend enablement explicit. This initial host compile model proves the
-# generated C API against headless SoLoud backends only, avoiding desktop audio
-# SDK dependencies until later backend-selection beads opt into them.
-{.passC: "-DWITH_NOSOUND -DWITH_NULL".}
+# Keep backend enablement explicit. Host builds prove the generated C API
+# against headless backends; 3DS builds compile the real libctru/NDSP backend.
+when defined(playPlatform3ds):
+  {.passC: "-DWITH_CTRU_NDSP".}
+else:
+  {.passC: "-DWITH_NOSOUND -DWITH_NULL".}
 
 when defined(linux):
   {.passL: "-lstdc++".}
@@ -53,9 +55,12 @@ compileSoloud "core/soloud_misc.cpp"
 compileSoloud "core/soloud_queue.cpp"
 compileSoloud "core/soloud_thread.cpp"
 
-# Headless backends enabled by the WITH_* defines above.
-compileSoloud "backend/nosound/soloud_nosound.cpp"
-compileSoloud "backend/null/soloud_null.cpp"
+# Backends enabled by the WITH_* defines above.
+when defined(playPlatform3ds):
+  compileSoloud "backend/ctru_ndsp/soloud_ctru_ndsp.cpp"
+else:
+  compileSoloud "backend/nosound/soloud_nosound.cpp"
+  compileSoloud "backend/null/soloud_null.cpp"
 
 # Filter wrappers referenced by the generated C API.
 compileSoloud "filter/soloud_bassboostfilter.cpp"

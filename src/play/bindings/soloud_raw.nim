@@ -23,9 +23,11 @@ type
 
 const
   SOLOUD_AUTO* = 0'u32
-  SOLOUD_NOSOUND* = 15'u32
-  SOLOUD_NULLDRIVER* = 16'u32
-  SOLOUD_BACKEND_MAX* = 17'u32
+  SOLOUD_CTRU_NDSP* = 14'u32
+  SOLOUD_MINIAUDIO* = 15'u32
+  SOLOUD_NOSOUND* = 16'u32
+  SOLOUD_NULLDRIVER* = 17'u32
+  SOLOUD_BACKEND_MAX* = 18'u32
 
   SOLOUD_CLIP_ROUNDOFF* = 1'u32
   SOLOUD_ENABLE_VISUALIZATION* = 2'u32
@@ -46,6 +48,8 @@ proc Soloud_initEx*(
   aBufferSize: cuint,
   aChannels: cuint
 ): SoloudResult {.importc, cdecl.}
+proc Soloud_pause*(aSoloud: Soloud): SoloudResult {.importc, cdecl.}
+proc Soloud_resume*(aSoloud: Soloud): SoloudResult {.importc, cdecl.}
 proc Soloud_deinit*(aSoloud: Soloud) {.importc, cdecl.}
 proc Soloud_getErrorString*(aSoloud: Soloud, aErrorCode: cint): cstring {.importc, cdecl.}
 proc Soloud_getBackendId*(aSoloud: Soloud): cuint {.importc, cdecl.}

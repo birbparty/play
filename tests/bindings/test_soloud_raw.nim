@@ -8,8 +8,11 @@ static:
   doAssert sizeof(cfloat) == 4
   doAssert sizeof(cdouble) == 8
   doAssert SOLOUD_AUTO == 0'u32
-  doAssert SOLOUD_NOSOUND == 15'u32
-  doAssert SOLOUD_NULLDRIVER == 16'u32
+  doAssert SOLOUD_CTRU_NDSP == 14'u32
+  doAssert SOLOUD_MINIAUDIO == 15'u32
+  doAssert SOLOUD_NOSOUND == 16'u32
+  doAssert SOLOUD_NULLDRIVER == 17'u32
+  doAssert SOLOUD_BACKEND_MAX == 18'u32
   doAssert SOLOUD_CLIP_ROUNDOFF == 1'u32
 
 proc addLe16(data: var string, value: uint16) =
@@ -68,7 +71,6 @@ proc checkBackend(backend: cuint, wavPath: string) =
     doAssert Soloud_getBackendString(soloud) != nil
     doAssert Soloud_getBackendSamplerate(soloud) == 44100'u32
     doAssert Soloud_getBackendBufferSize(soloud) > 0'u32
-
     Soloud_setGlobalVolume(soloud, 0.5'f32)
     doAssert Soloud_setMaxActiveVoiceCount(soloud, 8'u32) == 0
 

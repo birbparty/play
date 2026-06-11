@@ -30,7 +30,7 @@ freely, subject to the following restrictions:
 
 const char * getBackendEnumString(int aBackend)
 {
-	SOLOUD_ASSERT(SoLoud::Soloud::BACKEND_MAX == 17); // if this fails, this function needs adjustment
+	SOLOUD_ASSERT(SoLoud::Soloud::BACKEND_MAX == 18); // if this fails, this function needs adjustment
 	switch (aBackend)
 	{
 	case SoLoud::Soloud::AUTO: return "AUTO";
@@ -47,6 +47,7 @@ const char * getBackendEnumString(int aBackend)
 	case SoLoud::Soloud::COREAUDIO: return "COREAUDIO";
 	case SoLoud::Soloud::OPENSLES: return "OPENSLES";
 	case SoLoud::Soloud::VITA_HOMEBREW: return "VITA_HOMEBREW";
+	case SoLoud::Soloud::CTRU_NDSP: return "CTRU_NDSP";
 	case SoLoud::Soloud::NULLDRIVER: return "NULLDRIVER";
 	case SoLoud::Soloud::NOSOUND: return "NOSOUND";
 	case SoLoud::Soloud::MINIAUDIO: return "MINIAUDIO";
