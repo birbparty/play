@@ -5,7 +5,9 @@
 ## playback, handle, bus, and fade APIs are implemented.
 
 import play/lifecycle
+import play/types
 
 export lifecycle
+export types
 
 const playVersion* = "0.1.0"
