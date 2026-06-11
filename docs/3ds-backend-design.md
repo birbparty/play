@@ -88,22 +88,39 @@ Patch these exact files in `~/git/soloud`:
 - `include/soloud.h`
   - Add `CTRU_NDSP` to `SoLoud::Soloud::BACKENDS`.
   - Keep `BACKEND_MAX` last.
-- `scripts/makeglue.py` or the fork's active C API generation path
-  - Regenerate generated C API files after the enum changes.
+- `src/tools/codegen/main.cpp`
+  - Build and run the C API generator after the enum changes.
 - `include/soloud_c.h`
   - Generated output must include `SOLOUD_CTRU_NDSP`.
 - `src/c_api/soloud_c.cpp`
   - Regenerate with the rest of the C API output if the generator touches it.
+- `src/c_api/soloud.def`
+  - Regenerate with the rest of the C API output if the generator touches it.
+- `scripts/soloud_codegen.py`
+  - Regenerate with the rest of the C API output if the generator touches it.
 - `src/core/soloud.cpp`
   - Declare `ctru_ndsp_init`.
+  - Add `WITH_CTRU_NDSP` to the top-level "no backend defined" preprocessor
+    guard.
   - Add a `WITH_CTRU_NDSP` guarded dispatch block.
   - Allow `AUTO` to choose this backend when compiled for 3DS.
   - Set `mBackendID = Soloud::CTRU_NDSP` and backend string from the backend.
 - `src/backend/ctru_ndsp/soloud_ctru_ndsp.cpp`
   - Implement `ctru_ndsp_init`, backend data, audio thread, NDSP setup, buffer
     filling, and cleanup.
-- `src/backend/ctru_ndsp/` build metadata, if the fork's non-Nim build files
-  require explicit source lists.
+  - On successful init, set `aSoloud->mBackendData`,
+    `aSoloud->mBackendCleanupFunc`, and `aSoloud->mBackendString`.
+  - Call `aSoloud->postinit_internal(samplerate, samplesPerBuffer * channels,
+    aFlags, channels)` before returning success.
+- `contrib/Configure.cmake`
+  - Add a `SOLOUD_BACKEND_CTRU_NDSP` option if CMake builds should expose the
+    backend.
+- `contrib/src.cmake`
+  - Add `src/backend/ctru_ndsp/soloud_ctru_ndsp.cpp` and `-DWITH_CTRU_NDSP`
+    behind the CMake option.
+- `scripts/makerel.py`
+  - Add the new backend source to release/source sanity lists if the fork's
+    release tooling should package it.
 
 Patch these files in `play` after re-vendoring:
 
