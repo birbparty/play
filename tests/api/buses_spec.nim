@@ -82,6 +82,27 @@ spec "public fixed bus volume API":
       activeSfx == 0.25'f32
       activeUi == 0.5'f32
 
+  it "applies public bus volume controls with NOSOUND backend":
+    given:
+      var initResult: PlayResult
+      var masterVolume: PlayResult
+      var musicVolume: PlayResult
+      var sfxVolume: PlayResult
+      var uiVolume: PlayResult
+    act:
+      initResult = init(initOptions(backend = noSoundBackend))
+      masterVolume = setMasterVolume(0.75'f32)
+      musicVolume = setMusicVolume(0.125'f32)
+      sfxVolume = setSfxVolume(0.25'f32)
+      uiVolume = setUiVolume(0.5'f32)
+      shutdown()
+    then:
+      initResult.ok == true
+      masterVolume.ok == true
+      musicVolume.ok == true
+      sfxVolume.ok == true
+      uiVolume.ok == true
+
   it "keeps bus creation and raw bus access out of the public API":
     then:
       musicBus.isValid == true
