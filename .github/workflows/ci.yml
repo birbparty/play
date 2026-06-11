@@ -10,6 +10,50 @@ permissions:
   contents: read
 
 jobs:
+  nintendo-3ds-examples:
+    name: Nintendo 3DS example cross-compile
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitarm:latest
+    env:
+      NIM_VERSION: 2.2.10
+      DEVKITPRO: /opt/devkitpro
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl xz-utils
+          curl -fsSL "https://nim-lang.org/download/nim-${NIM_VERSION}-linux_x64.tar.xz" -o /tmp/nim.tar.xz
+          tar -xJf /tmp/nim.tar.xz -C /opt
+          echo "/opt/nim-${NIM_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Build Nintendo 3DS examples
+        run: scripts/build_3ds_examples.sh --out-dir build/3ds
+
+      - name: List Nintendo 3DS artifacts
+        run: |
+          find build/3ds -maxdepth 1 -type f \( -name '*.3dsx' -o -name '*.elf' \) | sort
+          find build/3ds/sdroot/tests/fixtures/generated -maxdepth 1 -type f | sort
+          test -s build/3ds/phase1_public_api.3dsx
+          test -s build/3ds/bus_volume_demo.3dsx
+          test -s build/3ds/music_fades.3dsx
+          test -s build/3ds/sfx_keypress.3dsx
+          test -s build/3ds/sdroot/tests/fixtures/generated/tone_sfx.wav
+          test -s build/3ds/sdroot/tests/fixtures/generated/tone_music.ogg
+          test -s build/3ds/sdroot/tests/fixtures/generated/tone_music_long.ogg
+
+      - name: Upload Nintendo 3DS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nintendo-3ds-artifacts
+          path: |
+            build/3ds/*.3dsx
+            build/3ds/sdroot/**
+          if-no-files-found: error
+
   vita-examples:
     name: Vita example cross-compile
     runs-on: ubuntu-latest
