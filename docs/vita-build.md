@@ -119,4 +119,5 @@ test ! -e librt.a
 ```
 
 Hardware audio behavior still requires a Vita or emulator setup that can run the
-generated `.vpk` files.
+generated `.vpk` files; see `docs/vita-hardware-verification.md` for the human
+verification checklist.

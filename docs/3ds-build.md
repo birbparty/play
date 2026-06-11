@@ -91,15 +91,15 @@ host null backend.
 
 ## Hardware Notes
 
-Real hardware needs `dspfirm.cdc` on the SD card for NDSP audio output. This
-repository does not generate or distribute that firmware file.
+Real hardware needs `sdmc:/3ds/dspfirm.cdc` on the SD card for NDSP audio
+output. This repository does not generate or distribute that firmware file.
 
 For a hardware test, copy:
 
 ```text
 build/3ds/<name>.3dsx
 build/3ds/sdroot/tests/fixtures/generated/
-dspfirm.cdc
+3ds/dspfirm.cdc
 ```
 
 to the SD card layout expected by the homebrew launcher.
@@ -116,4 +116,5 @@ after=$(shasum -a 256 nim.cfg | awk '{print $1}')
 test "$before" = "$after"
 ```
 
-Hardware audio behavior still requires a 3DS setup with `dspfirm.cdc`.
+Hardware audio behavior still requires a 3DS setup with `dspfirm.cdc`; see
+`docs/3ds-hardware-verification.md` for the human verification checklist.
