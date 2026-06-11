@@ -4,6 +4,30 @@ set -eu
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 tmp_root="${TMPDIR:-/tmp}/play-consumer-smoke.$$"
 
+nim_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -m "$1"
+  else
+    printf '%s\n' "$1"
+  fi
+}
+
+exe_path() {
+  if [ -x "$1" ]; then
+    printf '%s\n' "$1"
+  elif [ -x "$1.exe" ]; then
+    printf '%s\n' "$1.exe"
+  else
+    return 1
+  fi
+}
+
+repo_nim_path=$(nim_path "$repo_root")
+repo_file_url="file://$repo_nim_path"
+case "$repo_nim_path" in
+  ?:/*) repo_file_url="file:///$repo_nim_path" ;;
+esac
+
 cleanup() {
   rm -rf "$tmp_root"
 }
@@ -21,7 +45,7 @@ srcDir = "src"
 bin = @["play_consumer_smoke"]
 
 requires "nim >= 2.0.0"
-requires "file://$repo_root"
+requires "$repo_file_url"
 EOF
 
 cat > "$tmp_root/path-consumer/src/play_consumer_smoke.nim" <<'EOF'
@@ -34,7 +58,7 @@ EOF
 path_log="$tmp_root/path-consumer/build.log"
 (
   cd "$tmp_root/path-consumer"
-  nimble --nimbleDir:"$tmp_root/path-consumer/nimble" --noColor --verbose build -y
+  nimble --nimbleDir:"$(nim_path "$tmp_root/path-consumer/nimble")" --noColor --verbose build -y
 ) > "$path_log" 2>&1
 
 if grep -q "Error:" "$path_log"; then
@@ -42,18 +66,18 @@ if grep -q "Error:" "$path_log"; then
   exit 1
 fi
 
-if [ ! -x "$tmp_root/path-consumer/play_consumer_smoke" ]; then
+if ! path_binary=$(exe_path "$tmp_root/path-consumer/play_consumer_smoke"); then
   cat "$path_log"
   echo "Expected path dependency consumer binary was not created" >&2
   exit 1
 fi
 
-"$tmp_root/path-consumer/play_consumer_smoke"
+"$path_binary"
 
 install_log="$tmp_root/install.log"
 (
   cd "$repo_root"
-  nimble --nimbleDir:"$tmp_root/installed-nimble" --noColor --verbose install -y
+  nimble --nimbleDir:"$(nim_path "$tmp_root/installed-nimble")" --noColor --verbose install -y
 ) > "$install_log" 2>&1
 
 if grep -q "Error:" "$install_log"; then
@@ -89,21 +113,21 @@ shutdown()
 EOF
 
 installed_log="$tmp_root/installed-consumer/build.log"
-nim c --path:"$pkg_root" --out:"$tmp_root/installed-consumer/play_consumer_smoke" \
-  "$tmp_root/installed-consumer/src/play_consumer_smoke.nim" > "$installed_log" 2>&1
+nim c --path:"$(nim_path "$pkg_root")" --out:"$(nim_path "$tmp_root/installed-consumer/play_consumer_smoke")" \
+  "$(nim_path "$tmp_root/installed-consumer/src/play_consumer_smoke.nim")" > "$installed_log" 2>&1
 
 if grep -q "Error:" "$installed_log"; then
   cat "$installed_log"
   exit 1
 fi
 
-if [ ! -x "$tmp_root/installed-consumer/play_consumer_smoke" ]; then
+if ! installed_binary=$(exe_path "$tmp_root/installed-consumer/play_consumer_smoke"); then
   cat "$installed_log"
   echo "Expected installed-layout consumer binary was not created" >&2
   exit 1
 fi
 
-"$tmp_root/installed-consumer/play_consumer_smoke"
+"$installed_binary"
 
 if [ "${PLAY_CONSUMER_URL:-}" != "" ]; then
   mkdir -p "$tmp_root/url-consumer/src"
@@ -129,7 +153,7 @@ EOF
   url_log="$tmp_root/url-consumer/build.log"
   (
     cd "$tmp_root/url-consumer"
-    nimble --nimbleDir:"$tmp_root/url-consumer/nimble" --noColor --verbose build -y
+    nimble --nimbleDir:"$(nim_path "$tmp_root/url-consumer/nimble")" --noColor --verbose build -y
   ) > "$url_log" 2>&1
 
   if grep -q "Error:" "$url_log"; then
@@ -137,11 +161,11 @@ EOF
     exit 1
   fi
 
-  if [ ! -x "$tmp_root/url-consumer/play_consumer_smoke" ]; then
+  if ! url_binary=$(exe_path "$tmp_root/url-consumer/play_consumer_smoke"); then
     cat "$url_log"
     echo "Expected URL dependency consumer binary was not created" >&2
     exit 1
   fi
 
-  "$tmp_root/url-consumer/play_consumer_smoke"
+  "$url_binary"
 fi

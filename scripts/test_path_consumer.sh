@@ -4,6 +4,24 @@ set -euo pipefail
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 tmp_root="${TMPDIR:-/tmp}/play-path-consumer.$$"
 
+nim_path() {
+  if command -v cygpath >/dev/null 2>&1; then
+    cygpath -m "$1"
+  else
+    printf '%s\n' "$1"
+  fi
+}
+
+exe_path() {
+  if [ -x "$1" ]; then
+    printf '%s\n' "$1"
+  elif [ -x "$1.exe" ]; then
+    printf '%s\n' "$1.exe"
+  else
+    return 1
+  fi
+}
+
 cleanup() {
   rm -rf "$tmp_root"
 }
@@ -24,14 +42,14 @@ run_and_check() {
     exit 1
   fi
 
-  if grep -F -q "$tmp_root/consumer-host/vendor/soloud" "$log" ||
-      grep -F -q "$tmp_root/consumer-console/vendor/soloud" "$log"; then
+  if grep -F -q "$(nim_path "$tmp_root/consumer-host/vendor/soloud")" "$log" ||
+      grep -F -q "$(nim_path "$tmp_root/consumer-console/vendor/soloud")" "$log"; then
     cat "$log"
     echo "Consumer-local vendor/soloud was used unexpectedly" >&2
     exit 1
   fi
 
-  if ! grep -q "$repo_root/vendor/soloud/src/c_api/soloud_c.cpp" "$log"; then
+  if ! grep -F -q "$(nim_path "$repo_root/vendor/soloud/src/c_api/soloud_c.cpp")" "$log"; then
     cat "$log"
     echo "Expected play's vendored SoLoud source path in compiler output" >&2
     exit 1
@@ -58,7 +76,7 @@ cat > "$tmp_root/consumer-console/vendor/soloud/src/c_api/soloud_c.cpp" <<'EOF'
 EOF
 
 cat > "$tmp_root/consumer-console/nim.cfg" <<EOF
---path:"$repo_root/src"
+--path:"$(nim_path "$repo_root/src")"
 --threads:off
 --mm:arc
 --define:useMalloc
@@ -70,19 +88,21 @@ EOF
 (
   cd "$tmp_root/consumer-host"
   run_and_check host \
-    nim c --verbosity:1 --listCmd --nimcache:"$tmp_root/nimcache-host" \
-      --path:"$repo_root/src" --mm:orc \
-      --out:"$tmp_root/consumer-host/path_consumer" src/path_consumer.nim
+    nim c --verbosity:1 --listCmd --nimcache:"$(nim_path "$tmp_root/nimcache-host")" \
+      --path:"$(nim_path "$repo_root/src")" --mm:orc \
+      --out:"$(nim_path "$tmp_root/consumer-host/path_consumer")" src/path_consumer.nim
 )
 
-"$tmp_root/consumer-host/path_consumer"
+host_binary=$(exe_path "$tmp_root/consumer-host/path_consumer")
+"$host_binary"
 
 (
   cd "$tmp_root/consumer-console"
   run_and_check console-style \
-    nim c --verbosity:1 --listCmd --nimcache:"$tmp_root/nimcache-console" \
-      --out:"$tmp_root/consumer-console/console_style_consumer" \
+    nim c --verbosity:1 --listCmd --nimcache:"$(nim_path "$tmp_root/nimcache-console")" \
+      --out:"$(nim_path "$tmp_root/consumer-console/console_style_consumer")" \
       src/console_style_consumer.nim
 )
 
-"$tmp_root/consumer-console/console_style_consumer"
+console_binary=$(exe_path "$tmp_root/consumer-console/console_style_consumer")
+"$console_binary"
