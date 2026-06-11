@@ -94,10 +94,11 @@ proc runBusVolumeDemo*(config = defaultBusDemoConfig()): BusDemoResult =
     if config.holdMs > 0:
       sleep(config.holdMs)
 
-    discard applyVolume(config, "master volume duck", 0.55'f32, setMasterVolume)
-    discard applyVolume(config, "music volume raise", 0.8'f32, setMusicVolume)
-    discard applyVolume(config, "sfx volume duck", 0.35'f32, setSfxVolume)
-    discard applyVolume(config, "ui volume raise", 1.0'f32, setUiVolume)
+    result.volumesChanged = result.volumesChanged and
+      applyVolume(config, "master volume duck", 0.55'f32, setMasterVolume) and
+      applyVolume(config, "music volume raise", 0.8'f32, setMusicVolume) and
+      applyVolume(config, "sfx volume duck", 0.35'f32, setSfxVolume) and
+      applyVolume(config, "ui volume raise", 1.0'f32, setUiVolume)
 
     if config.holdMs > 0:
       sleep(config.holdMs)
