@@ -28,4 +28,5 @@ task testTap, "Run the play test suite with TAP output":
 
 task testJunit, "Run the play test suite with JUnit output":
   mkDir "tests/results"
+  # bddyJunit is a strdefine; keep the path in the same quoted compiler argument.
   exec "nim c --path:src \"-d:bddyJunit:tests/results/test_all.xml\" -r tests/test_all.nim"

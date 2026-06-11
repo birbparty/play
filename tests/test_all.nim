@@ -16,6 +16,9 @@ spec "play package":
 
   it "resolves the fixture root helper":
     given:
-      let wavPath = fixturePath("generated", "tone.wav").replace("\\", "/")
-    verify:
-      wavPath.endsWith("tests/fixtures/generated/tone.wav")
+      let expectedSuffix = "tests/fixtures/generated/tone.wav"
+      var wavPath = ""
+    act:
+      wavPath = fixturePath("generated", "tone.wav").replace("\\", "/")
+    then:
+      wavPath.endsWith(expectedSuffix)
