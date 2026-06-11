@@ -3,6 +3,8 @@ nimblecache/
 htmldocs/
 tests/test_all
 tests/test_all.exe
+tests/test_soloud_compile
+tests/test_soloud_compile.exe
 tests/results/
 stubs/*.a
 
