@@ -12,6 +12,7 @@ import api/lifecycle_spec
 import api/playback_spec
 import api/public_api_spec
 import api/types_spec
+import examples/bus_volume_demo_spec
 import examples/example_assets_spec
 import fixtures/fixtures_spec
 import wrapper/assets_spec
