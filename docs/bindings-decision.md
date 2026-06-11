@@ -12,8 +12,9 @@ The handwritten scope should cover only the phase-1 public wrapper needs:
 
 - Engine lifecycle and diagnostics:
   `Soloud_create`, `Soloud_destroy`, `Soloud_init`, `Soloud_initEx`,
-  `Soloud_deinit`, `Soloud_getErrorString`, backend metadata, and
-  `Soloud_setGlobalVolume`
+  `Soloud_deinit`, `Soloud_getErrorString`, `Soloud_getBackendId`,
+  `Soloud_getBackendString`, `Soloud_getBackendSamplerate`,
+  `Soloud_getBackendBufferSize`, and `Soloud_setGlobalVolume`
 - Playback and handles:
   `Soloud_play`, `Soloud_playEx`, `Soloud_playBackground`,
   `Soloud_playBackgroundEx`, `Soloud_stop`, `Soloud_stopAll`,
@@ -28,7 +29,10 @@ The handwritten scope should cover only the phase-1 public wrapper needs:
   `Bus_create`, `Bus_destroy`, `Bus_play`, `Bus_playEx`, `Bus_setVolume`,
   and `Bus_stop`
 - Resident and streaming assets:
-  `Wav_*` and `WavStream_*` functions required by phase-1 WAV and OGG loading
+  `Wav_create`, `Wav_destroy`, `Wav_load`, `Wav_loadMem`, `Wav_setLooping`,
+  `Wav_setVolume`, `Wav_stop`, `WavStream_create`, `WavStream_destroy`,
+  `WavStream_load`, `WavStream_loadMem`, `WavStream_loadToMem`,
+  `WavStream_setLooping`, `WavStream_setVolume`, and `WavStream_stop`
 
 Keep raw bindings internal to implementation modules. The public `play` API
 should not expose raw SoLoud pointers, C enum names, or C voice ids.
@@ -41,9 +45,10 @@ Futhark was installed in an isolated temporary Nimble directory:
 nimble --nimbleDir:/tmp/play-futhark-spike/nimble install -y futhark
 ```
 
-The installed generator was Futhark `0.16.0`. Its compile-time dependencies
-included `libclang-nim`, `macroutils`, `nimbleutils`, `termstyle`, and the
-`opir` helper binary.
+The spike used Nim `2.2.10` and Futhark `0.16.0`. Futhark's compile-time
+dependencies included `libclang-nim`, `macroutils`, `nimbleutils`, `termstyle`,
+and the `opir` helper binary. All spike artifacts under `/tmp/play-futhark-spike`
+were disposable and are intentionally not committed.
 
 A scratch wrapper over `vendor/soloud/include/soloud_c.h` compiled and linked
 on host when `opir` was supplied explicitly:
@@ -60,6 +65,18 @@ The host smoke program imported that wrapper plus `play/soloud_compile`, called
 `Soloud_create`, asserted the returned pointer was non-nil, and called
 `Soloud_destroy`. It compiled with `nim c` and linked through the existing
 `soloud_c.cpp` compile model.
+
+Representative host command:
+
+```sh
+nim c "-d:opirBin:/tmp/play-futhark-spike/nimble/pkgs2/futhark-0.16.0-*/futhark/opir" \
+  --path:/tmp/play-futhark-spike/nimble/pkgs2/futhark-0.16.0-* \
+  --path:/tmp/play-futhark-spike/nimble/pkgs2/macroutils-* \
+  --path:/tmp/play-futhark-spike/nimble/pkgs2/nimbleutils-* \
+  --path:/tmp/play-futhark-spike/nimble/pkgs2/termstyle-* \
+  --path:/Users/punk1290/git/play/src \
+  /tmp/play-futhark-spike/work/use_soloud_futhark.nim
+```
 
 Without the `opirBin` strdefine or `opir` on `PATH`, generation failed with:
 
@@ -98,11 +115,15 @@ surface:
 - Post-processing enough of the output to make it reviewable would become a
   second generator maintenance surface.
 
+This decision supersedes the earlier shortcut of committing generated output if
+it merely compiles. Compile success did not make the generated API scoped,
+readable, or reviewable enough for `play`'s raw binding layer.
+
 ## Cross-Compile Notes
 
-The generated-only Futhark output type-checked for both console defines. The
-existing SoLoud compile module also passed console `--compileOnly` checks in the
-spike.
+The generated-only Futhark output type-checked with the devkitARM 3DS cfg
+(`-d:ds3`) and the VitaSDK cfg (`-d:vita`) copied to `nim.cfg`. The existing
+SoLoud compile module also passed console `--compileOnly` checks in the spike.
 
 Full 3DS backend execution remains out of scope for this decision. The SoLoud
 fork still needs the separate libctru thread/mutex port and a real NDSP backend
@@ -113,5 +134,10 @@ regardless of Futhark versus handwritten Nim declarations.
 
 The next raw-binding bead should create the handwritten binding files and tests.
 It should use Futhark output only as a comparison aid for C signatures and enum
-numeric values. Do not add Futhark to `play.nimble`, and do not require
-downstream projects to install libclang.
+numeric values. The tests should include ABI/signature parity checks against
+`vendor/soloud/include/soloud_c.h` or a disposable Futhark reference, especially
+for pointer ownership, `cdecl` calling convention, integer widths, enum numeric
+values, and `float`/`double` parameters.
+
+Do not add Futhark to `play.nimble`, and do not require downstream projects to
+install libclang.
