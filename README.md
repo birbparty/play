@@ -31,6 +31,40 @@ Phase 1 covers:
 See [`docs/api.md`](docs/api.md) for examples and platform notes. A compact
 end-to-end example lives in [`examples/phase1_public_api.nim`](examples/phase1_public_api.nim).
 
+## Build And Verification
+
+Host verification:
+
+```sh
+nimble test -y
+nimble testTap -y
+nimble testJunit -y
+```
+
+Desktop examples:
+
+```sh
+bash scripts/build_desktop_examples.sh --smoke
+```
+
+Console example packages:
+
+- Nintendo 3DS: [`docs/3ds-build.md`](docs/3ds-build.md)
+- PS Vita: [`docs/vita-build.md`](docs/vita-build.md)
+
+Real console audio output is tracked separately as a human hardware gate:
+
+- Nintendo 3DS: [`docs/3ds-hardware-verification.md`](docs/3ds-hardware-verification.md)
+- PS Vita: [`docs/vita-hardware-verification.md`](docs/vita-hardware-verification.md)
+
+Release readiness is summarized in
+[`docs/release-checklist.md`](docs/release-checklist.md).
+
+## Consumption
+
+See [`docs/consumption.md`](docs/consumption.md) for Nimble URL pins, local path
+dependencies, and console-style `--path` source injection.
+
 ## Licensing
 
 `play` is distributed under the Zlib license. SoLoud is also Zlib-licensed; its
