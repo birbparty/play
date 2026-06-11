@@ -1,5 +1,7 @@
-#!/usr/bin/env sh
-set -eu
+#!/usr/bin/env bash
+set -euo pipefail
+
+. "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)/common.sh"
 
 usage() {
   cat <<'USAGE'
@@ -10,7 +12,6 @@ CI. --audio requests the default non-null backend compiled for this host.
 USAGE
 }
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$repo_root"
 
 run_smoke=0
@@ -50,10 +51,9 @@ run_example() {
   "$@"
 }
 
-build_example examples/phase1_public_api.nim
-build_example examples/bus_volume_demo.nim
-build_example examples/music_fades.nim
-build_example examples/sfx_keypress.nim
+for example in "${examples[@]}"; do
+  build_example "$example"
+done
 
 if [ "$run_smoke" -eq 1 ]; then
   run_example examples/phase1_public_api

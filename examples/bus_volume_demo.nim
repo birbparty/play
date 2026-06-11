@@ -17,8 +17,12 @@ type
     volumesChanged*: bool
 
 proc defaultBusDemoConfig*(): BusDemoConfig =
+  when defined(playPlatform3ds) or defined(playPlatformVita):
+    let options = initOptions()
+  else:
+    let options = initOptions(backend = nullBackend)
   BusDemoConfig(
-    options: initOptions(backend = nullBackend),
+    options: options,
     holdMs: 25,
     verbose: false
   )

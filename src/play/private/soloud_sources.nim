@@ -22,9 +22,11 @@ const
 {.passC: "-I" & soloudInclude.}
 
 # Keep backend enablement explicit. Host builds prove the generated C API
-# against headless backends; 3DS builds compile the real libctru/NDSP backend.
+# against headless backends; console builds compile their real platform backend.
 when defined(playPlatform3ds):
   {.passC: "-DWITH_CTRU_NDSP".}
+elif defined(playPlatformVita):
+  {.passC: "-DWITH_VITA_HOMEBREW".}
 else:
   {.passC: "-DWITH_NOSOUND -DWITH_NULL".}
 
@@ -64,6 +66,8 @@ compileSoloud "core/soloud_thread.cpp"
 # Backends enabled by the WITH_* defines above.
 when defined(playPlatform3ds):
   compileSoloud "backend/ctru_ndsp/soloud_ctru_ndsp.cpp"
+elif defined(playPlatformVita):
+  compileSoloud "backend/vita_homebrew/soloud_vita_homebrew.cpp"
 else:
   compileSoloud "backend/nosound/soloud_nosound.cpp"
   compileSoloud "backend/null/soloud_null.cpp"
@@ -93,9 +97,13 @@ compileSoloud "audiosource/ay/soloud_ay.cpp"
 compileSoloud "audiosource/monotone/soloud_monotone.cpp"
 compileSoloud "audiosource/noise/soloud_noise.cpp"
 # OpenMPT is satisfied through SoLoud's dynamic loader shim, not direct
-# libopenmpt linkage.
+# libopenmpt linkage. Console targets do not provide dlopen/dlfcn, and phase 1
+# does not expose module playback, so they link a no-op shim instead.
 compileSoloud "audiosource/openmpt/soloud_openmpt.cpp"
-compileSoloud "audiosource/openmpt/soloud_openmpt_dll.c"
+when defined(playPlatform3ds) or defined(playPlatformVita):
+  {.compile: sourceDir / "soloud_openmpt_stub.c".}
+else:
+  compileSoloud "audiosource/openmpt/soloud_openmpt_dll.c"
 compileSoloud "audiosource/sfxr/soloud_sfxr.cpp"
 compileSoloud "audiosource/speech/darray.cpp"
 compileSoloud "audiosource/speech/klatt.cpp"

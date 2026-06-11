@@ -3,7 +3,7 @@
 The desktop examples are built and smoke-run by:
 
 ```sh
-sh scripts/build_desktop_examples.sh --smoke
+bash scripts/build_desktop_examples.sh --smoke
 ```
 
 The smoke path uses each example's headless default backend so CI can verify
@@ -18,7 +18,7 @@ To run the same examples while requesting each example's non-null default
 backend path:
 
 ```sh
-sh scripts/build_desktop_examples.sh --audio
+bash scripts/build_desktop_examples.sh --audio
 ```
 
 That command builds all desktop examples and runs:
@@ -56,8 +56,8 @@ Verified on June 11, 2026:
 From the repository root with `nim` on `PATH`, run:
 
 ```sh
-sh scripts/build_desktop_examples.sh --smoke
-sh scripts/build_desktop_examples.sh --audio
+bash scripts/build_desktop_examples.sh --smoke
+bash scripts/build_desktop_examples.sh --audio
 ```
 
 The `--smoke` path is suitable for CI and does not require an audio device. The
@@ -69,8 +69,8 @@ is `NOSOUND` until a macOS hardware backend is added to the host build.
 From a shell with `nim` on `PATH`, run:
 
 ```sh
-sh scripts/build_desktop_examples.sh --smoke
-sh scripts/build_desktop_examples.sh --audio
+bash scripts/build_desktop_examples.sh --smoke
+bash scripts/build_desktop_examples.sh --audio
 ```
 
 If a POSIX shell is not available, use Git Bash, MSYS2, or WSL for the script.
@@ -82,8 +82,8 @@ example sources. WSL emits Linux binaries unless configured for cross-compiling.
 From the repository root:
 
 ```sh
-sh scripts/build_desktop_examples.sh --smoke
-sh scripts/build_desktop_examples.sh --audio
+bash scripts/build_desktop_examples.sh --smoke
+bash scripts/build_desktop_examples.sh --audio
 ```
 
 The `--smoke` path does not require an audio device. The `--audio` path requires

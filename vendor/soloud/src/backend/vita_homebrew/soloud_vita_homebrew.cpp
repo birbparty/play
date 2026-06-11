@@ -23,6 +23,7 @@ freely, subject to the following restrictions:
 */
 
 #include <atomic>
+#include <new>
 #include <string.h>
 
 #include "soloud.h"
@@ -62,8 +63,11 @@ namespace SoLoud
 		VitaData *data = (VitaData*)aSoloud->mBackendData;
 		data->done = true;
 
-		sceKernelWaitThreadEnd(data->tid, NULL, NULL);
-		sceKernelDeleteThread(data->tid);
+		if (data->tid >= 0)
+		{
+			sceKernelWaitThreadEnd(data->tid, NULL, NULL);
+			sceKernelDeleteThread(data->tid);
+		}
 		sceAudioOutReleasePort(data->port);
 
 		delete[] data->buffer[0];
@@ -97,20 +101,44 @@ namespace SoLoud
 		if (port < 0)
 			return INVALID_PARAMETER;
 
-		VitaData *data = new VitaData;
-		memset(data, 0, sizeof(*data)); //TODO: "Using 'memset' on struct that contains a 'std::atomic'"
+		VitaData *data = new (std::nothrow) VitaData();
+		if (!data)
+		{
+			sceAudioOutReleasePort(port);
+			return OUT_OF_MEMORY;
+		}
 		data->port = port;
 		data->samples = aBuffer;
 		data->soloud = aSoloud;
-		data->buffer[0] = new int16_t[aChannels * aBuffer];
-		data->buffer[1] = new int16_t[aChannels * aBuffer];
+		data->tid = -1;
+		data->buffer[0] = new (std::nothrow) int16_t[aChannels * aBuffer];
+		data->buffer[1] = new (std::nothrow) int16_t[aChannels * aBuffer];
+		if (!data->buffer[0] || !data->buffer[1])
+		{
+			delete[] data->buffer[0];
+			delete[] data->buffer[1];
+			delete data;
+			sceAudioOutReleasePort(port);
+			return OUT_OF_MEMORY;
+		}
 		aSoloud->mBackendData = data;
 		aSoloud->mBackendCleanupFunc = vita_cleanup;
 
 		aSoloud->postinit_internal(aSamplerate, data->samples * aChannels, aFlags, aChannels);
 
 		data->tid = sceKernelCreateThread("soloud audio output", vita_thread, 0x10000100, 0x10000, 0, 0, NULL);
-		sceKernelStartThread(data->tid, sizeof(data), &data);
+		if (data->tid < 0)
+		{
+			vita_cleanup(aSoloud);
+			return INVALID_PARAMETER;
+		}
+		if (sceKernelStartThread(data->tid, sizeof(data), &data) < 0)
+		{
+			sceKernelDeleteThread(data->tid);
+			data->tid = -1;
+			vita_cleanup(aSoloud);
+			return INVALID_PARAMETER;
+		}
 
 		return 0;
 	}
