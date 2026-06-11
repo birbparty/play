@@ -8,8 +8,8 @@
 - Source checkout: `~/git/soloud`
 - Remote: `git@github.com:birbparty/soloud.git`
 - Branch copied: `feat/3ds-support`
-- Commit copied: `e82fd32c1f62183922f08c14c814a02b58db1873`
-- Copy method: `rsync -a --delete --exclude='.git/' ~/git/soloud/ vendor/soloud/`
+- Commit copied: `208871b405a5348979dc4e7e3f248b47b8c74653`
+- Copy method: `git -C ~/git/soloud archive --format=tar HEAD | tar -x -C vendor/soloud`
 
 The vendored file count matches the fork's tracked file count at the copied
 commit. The fork's Git metadata is not vendored.
