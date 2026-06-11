@@ -12,6 +12,9 @@ when compiles(music.handle):
 when compiles(audioSource(sound)):
   {.error: "private asset audioSource bridge must not be public".}
 
+when compiles(rawHandle(newEngine())):
+  {.error: "private engine rawHandle bridge must not be public".}
+
 when compiles(Wav):
   {.error: "raw Wav type must not be exported by play/soloud".}
 
