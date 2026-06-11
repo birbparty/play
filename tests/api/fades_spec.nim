@@ -128,6 +128,31 @@ spec "public fade API":
       fadeOutResult.ok == false
       fadeOutResult.error.kind == invalidHandle
 
+  it "rejects once-valid public handles after stop":
+    given:
+      let soundResult = loadSound(fixturePath("generated", "tone_sfx.wav"))
+      var initResult: PlayResult
+      var handle = noHandle
+      var stopResult: PlayResult
+      var fadeResult: PlayResult
+      var fadeOutResult: PlayResult
+    act:
+      initResult = init(initOptions(backend = nullBackend))
+      handle = play(soundResult.sound)
+      stopResult = stop(handle)
+      fadeResult = fadeVolume(handle, 0.0'f32, 0.001)
+      fadeOutResult = fadeOutMusic(handle, 0.001)
+      soundResult.sound.dispose()
+      shutdown()
+    then:
+      initResult.ok == true
+      soundResult.ok == true
+      stopResult.ok == true
+      fadeResult.ok == false
+      fadeResult.error.kind == invalidHandle
+      fadeOutResult.ok == false
+      fadeOutResult.error.kind == invalidHandle
+
   it "does not expose explicit-engine fade helpers through the public facade":
     then:
       compiles(fadeVolume(currentEngine(), noHandle, 0.0'f32, 0.001)) == false
