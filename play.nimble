@@ -1,4 +1,6 @@
 # Package
+#
+# Nimble derives the package name `play` from this manifest filename.
 
 version       = "0.1.0"
 author        = "birbparty"
@@ -18,4 +20,5 @@ requires "https://github.com/mattsp1290/bddy#34287484337fbad6626525062fe27d28fcb
 # Tasks
 
 task test, "Run the play test suite":
+  # Keep this task as the aggregation point as future beads add bddy binaries.
   exec "nim c --path:src -r tests/test_all.nim"
