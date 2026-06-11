@@ -6,6 +6,8 @@ import play/errors
 import play/types as publicTypes
 import play/voices
 
+const stoppedVoiceCapacity = 1024
+
 type
   Engine* = ref object
     handle: raw.Soloud
@@ -16,37 +18,55 @@ type
     sfxBusHandle: raw.VoiceHandle
     uiBus: raw.Bus
     uiBusHandle: raw.VoiceHandle
-    stoppedVoices: seq[raw.VoiceHandle]
+    stoppedVoices: array[stoppedVoiceCapacity, raw.VoiceHandle]
+    stoppedVoiceCount: int
     voiceOptions: VoiceOptions
 
 proc forgetStoppedVoice*(engine: Engine, handle: raw.VoiceHandle) =
-  if engine == nil:
+  if engine == nil or handle == 0'u32:
     return
 
-  for index, stopped in engine.stoppedVoices:
-    if stopped == handle:
-      engine.stoppedVoices.delete(index)
+  for index in 0 ..< engine.stoppedVoiceCount:
+    if engine.stoppedVoices[index] == handle:
+      for moveIndex in index ..< engine.stoppedVoiceCount - 1:
+        engine.stoppedVoices[moveIndex] = engine.stoppedVoices[moveIndex + 1]
+      dec engine.stoppedVoiceCount
+      engine.stoppedVoices[engine.stoppedVoiceCount] = 0'u32
       return
 
 proc rememberStoppedVoice*(engine: Engine, handle: raw.VoiceHandle) =
   if engine == nil or handle == 0'u32:
     return
 
-  for stopped in engine.stoppedVoices:
-    if stopped == handle:
+  for index in 0 ..< engine.stoppedVoiceCount:
+    if engine.stoppedVoices[index] == handle:
       return
 
-  engine.stoppedVoices.add(handle)
+  if engine.stoppedVoiceCount == stoppedVoiceCapacity:
+    for index in 0 ..< stoppedVoiceCapacity - 1:
+      engine.stoppedVoices[index] = engine.stoppedVoices[index + 1]
+    engine.stoppedVoices[stoppedVoiceCapacity - 1] = handle
+  else:
+    engine.stoppedVoices[engine.stoppedVoiceCount] = handle
+    inc engine.stoppedVoiceCount
 
 proc wasStoppedVoice*(engine: Engine, handle: raw.VoiceHandle): bool =
   if engine == nil or handle == 0'u32:
     return false
 
-  for stopped in engine.stoppedVoices:
-    if stopped == handle:
+  for index in 0 ..< engine.stoppedVoiceCount:
+    if engine.stoppedVoices[index] == handle:
       return true
 
   false
+
+proc clearStoppedVoices(engine: Engine) =
+  if engine == nil:
+    return
+
+  for index in 0 ..< engine.stoppedVoiceCount:
+    engine.stoppedVoices[index] = 0'u32
+  engine.stoppedVoiceCount = 0
 
 proc destroyBuses(engine: Engine) =
   if engine == nil:
@@ -111,6 +131,8 @@ proc setVoiceOptions*(engine: Engine, options: VoiceOptions): PlayResult =
     return failure(initError("voice options must be set before engine initialization", 0))
   if options.maxActiveVoices < minimumMaxActiveVoices:
     return failure(initError("max active voices must leave room for fixed buses", 0))
+  if options.maxActiveVoices >= stoppedVoiceCapacity:
+    return failure(initError("max active voices exceeds SoLoud voice capacity", 0))
 
   engine.voiceOptions = options
   success()
@@ -183,7 +205,7 @@ proc init*(engine: Engine, options = initOptions()): PlayResult =
     return failure(allocationError("SoLoud fixed bus allocation failed"))
 
   engine.initialized = true
-  engine.stoppedVoices.setLen(0)
+  engine.clearStoppedVoices()
   success()
 
 proc shutdown*(engine: Engine) =
@@ -191,7 +213,7 @@ proc shutdown*(engine: Engine) =
     return
 
   raw.Soloud_stopAll(engine.handle)
-  engine.stoppedVoices.setLen(0)
+  engine.clearStoppedVoices()
   engine.destroyBuses()
   raw.Soloud_deinit(engine.handle)
   engine.initialized = false
@@ -201,7 +223,7 @@ proc destroy*(engine: Engine) =
     return
 
   engine.shutdown()
-  engine.stoppedVoices.setLen(0)
+  engine.clearStoppedVoices()
   raw.Soloud_destroy(engine.handle)
   engine.handle = nil
 

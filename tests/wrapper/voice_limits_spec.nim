@@ -55,11 +55,13 @@ spec "SoLoud voice limit policy":
       let engine = newEngine()
       var invalidResult: PlayResult
       var busStarvingResult: PlayResult
+      var overCapacityResult: PlayResult
       var initResult: PlayResult
       var lateResult: PlayResult
     act:
       invalidResult = engine.setVoiceOptions(voiceOptions(maxActiveVoices = 0'u32))
       busStarvingResult = engine.setVoiceOptions(voiceOptions(maxActiveVoices = fixedBusVoiceReserve))
+      overCapacityResult = engine.setVoiceOptions(voiceOptions(maxActiveVoices = 1024'u32))
       initResult = engine.init(initOptions(backend = nullBackend))
       lateResult = engine.setVoiceOptions(voiceOptions(maxActiveVoices = 4'u32))
       engine.destroy()
@@ -68,6 +70,8 @@ spec "SoLoud voice limit policy":
       invalidResult.error.kind == initFailed
       busStarvingResult.ok == false
       busStarvingResult.error.kind == initFailed
+      overCapacityResult.ok == false
+      overCapacityResult.error.kind == initFailed
       initResult.ok == true
       lateResult.ok == false
       lateResult.error.kind == initFailed
