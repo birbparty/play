@@ -4,7 +4,11 @@ import std/os
 
 import play
 
-when defined(playPlatform3ds) or defined(playPlatformVita):
+when defined(playPlatform3ds):
+  const
+    examplesRoot* = "sdmc:/examples"
+    repoRoot* = "sdmc:"
+elif defined(playPlatformVita):
   const
     examplesRoot* = "examples"
     repoRoot* = "."
