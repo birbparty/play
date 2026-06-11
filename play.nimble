@@ -13,4 +13,4 @@ requires "nim >= 2.0.0"
 # Tasks
 
 task test, "Run the play test suite":
-  exec "nim c -r tests/test_all.nim"
+  exec "nim c --path:src -r tests/test_all.nim"
