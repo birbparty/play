@@ -59,6 +59,8 @@ tests/api/test_types
 tests/api/test_types.exe
 tests/fixtures/test_fixtures
 tests/fixtures/test_fixtures.exe
+tests/stress/test_realtime_boundary
+tests/stress/test_realtime_boundary.exe
 tests/results/
 stubs/*.a
 
