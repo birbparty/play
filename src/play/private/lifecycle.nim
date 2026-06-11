@@ -79,8 +79,8 @@ proc setVoiceOptions*(engine: Engine, options: VoiceOptions): PlayResult =
     return failure(invalidHandleError("play engine is not initialized"))
   if engine.initialized:
     return failure(initError("voice options must be set before engine initialization", 0))
-  if options.maxActiveVoices == 0'u32:
-    return failure(initError("max active voices must be greater than zero", 0))
+  if options.maxActiveVoices < minimumMaxActiveVoices:
+    return failure(initError("max active voices must leave room for fixed buses", 0))
 
   engine.voiceOptions = options
   success()

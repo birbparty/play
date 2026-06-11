@@ -15,5 +15,5 @@ export buses
 export errors
 export fades
 export handles
-export lifecycle except rawHandle, rawBus, rawBusHandle
+export lifecycle except rawHandle, rawBus, rawBusHandle, activeVoiceCount
 export voices
