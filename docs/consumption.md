@@ -35,3 +35,41 @@ PLAY_CONSUMER_URL="https://github.com/birbparty/play#<commit-sha>" sh tests/cons
 The smoke script treats compiler output containing `Error:` or a missing
 consumer binary as a failure because Nimble 0.22.2 can report a successful
 process exit after some dependency graph or compiler failures.
+
+## Consuming play with `--path`
+
+Console-style build systems can also consume `play` without Nimble dependency
+resolution by injecting the source directory into the consumer compile:
+
+```sh
+nim c --path:/absolute/path/to/play/src src/my_game.nim
+```
+
+The consumer code still imports only the public facade:
+
+```nim
+import play
+
+discard init(initOptions(backend = nullBackend))
+shutdown()
+```
+
+For clckr-style console builds, put the injected path and platform runtime
+settings in the consumer's target config:
+
+```text
+--path:"/absolute/path/to/play/src"
+--threads:off
+--mm:arc
+--define:useMalloc
+--define:nimAllocPagesViaMalloc
+--define:noSignalHandler
+--opt:size
+```
+
+The vendored SoLoud source closure is still resolved from `play`'s own source
+location, not from the consumer working directory. `scripts/test_path_consumer.sh`
+verifies that a bare consumer outside this repository can compile through
+`nim c` with only `--path` injection, including a console-style config profile,
+and that compiler output uses `play/vendor/soloud/...` even when the consumer
+contains its own `vendor/soloud` directory.

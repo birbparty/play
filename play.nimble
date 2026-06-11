@@ -24,6 +24,7 @@ requires "https://github.com/mattsp1290/bddy#34287484337fbad6626525062fe27d28fcb
 task test, "Run the play test suite":
   # Keep this task as the aggregation point as future beads add bddy binaries.
   exec "sh tests/consumer/verify_consumer.sh"
+  exec "bash scripts/test_path_consumer.sh"
   exec "nim c --path:src --path:examples examples/phase1_public_api.nim"
   exec "nim c --path:src --path:examples -r examples/bus_volume_demo.nim --quiet"
   exec "nim c --path:src --path:examples -r examples/music_fades.nim --quiet"
