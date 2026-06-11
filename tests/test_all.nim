@@ -4,6 +4,7 @@ import bddy
 import play
 import common/test_helpers
 {.warning[UnusedImport]: off.}
+import wrapper/errors_spec
 import wrapper/lifecycle_spec
 {.warning[UnusedImport]: on.}
 
