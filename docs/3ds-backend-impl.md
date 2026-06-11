@@ -1,7 +1,7 @@
 # 3DS NDSP SoLoud Backend Implementation
 
 `vendor/soloud/` includes birbparty/soloud fork commit
-`bbf82cf6a46634d6b2765c40232b1bb1de3bcf55` from branch
+`412011ec5c950ebf85f717b57722bb9298329686` from branch
 `feat/3ds-support`.
 
 That fork commit implements the in-tree `ctru_ndsp` backend designed in
@@ -11,6 +11,10 @@ That fork commit implements the in-tree `ctru_ndsp` backend designed in
 
 - Added `SoLoud::Soloud::CTRU_NDSP` and regenerated the C API enum as
   `SOLOUD_CTRU_NDSP = 14`.
+- Ran the fork's codegen flow and committed the generated C API artifacts:
+  `include/soloud_c.h`, `src/c_api/soloud_c.cpp`, and `src/c_api/soloud.def`.
+  The intermediate `scripts/soloud_codegen.py` is ignored by the SoLoud fork
+  and is not part of the vendored snapshot.
 - Added `ctru_ndsp_init` to the internal backend init declarations.
 - Added `WITH_CTRU_NDSP` dispatch in `src/core/soloud.cpp`; `AUTO` can choose
   the backend when it is compiled in, and explicit `CTRU_NDSP` init returns the
@@ -21,7 +25,10 @@ That fork commit implements the in-tree `ctru_ndsp` backend designed in
 ## Backend Shape
 
 The backend initializes NDSP, configures channel 0 for stereo signed 16-bit PCM
-at 44100 Hz, and owns three linear-memory `ndspWaveBuf` buffers.
+at 44100 Hz, and owns three linear-memory `ndspWaveBuf` buffers. It currently
+accepts only 44100 Hz, stereo output, and nonzero buffers; explicit
+`Soloud_initEx` calls with other rates or channel counts return
+`INVALID_PARAMETER`.
 
 The backend creates its audio thread through SoLoud's C++ thread abstraction,
 which is backed by libctru on 3DS in this fork. The thread only calls SoLoud C++
@@ -72,6 +79,11 @@ The fork backend was compiled directly with devkitARM/libctru:
 A devkitARM static archive was also built from the SoLoud core closure plus
 `src/backend/ctru_ndsp/soloud_ctru_ndsp.cpp`, producing
 `/tmp/soloud-ctru-build/libsoloud_ctru_ndsp.a`.
+
+The `play` Nim 3DS compile closure is still expected to be verified by the
+example cross-compile bead using `nim_3ds.cfg`; this record covers the
+fork-level backend compile/archive build and host checks for the Nim binding
+surface.
 
 After re-vendoring into `play`, the fork tracked-file list was compared against
 `vendor/soloud/`.

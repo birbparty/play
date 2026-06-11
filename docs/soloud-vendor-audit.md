@@ -8,12 +8,12 @@ fork intended for `play` vendoring.
 - Local checkout: `~/git/soloud`
 - Remote: `git@github.com:birbparty/soloud.git`
 - Branch inspected: `feat/3ds-support`
-- Commit inspected: `e82fd32c1f62183922f08c14c814a02b58db1873`
-- Worktree status at audit time: clean; inspected commit matches local
-  `master` / `origin/master`
+- Commit inspected: `412011ec5c950ebf85f717b57722bb9298329686`
+- Worktree status at audit time: clean; inspected commit matches the vendored
+  snapshot recorded in `docs/soloud-vendor.md`
 
-Use this commit as the initial audit reference only. The vendoring bead should
-record the exact commit that is copied into `vendor/soloud/`.
+The original audit began from `e82fd32c1f62183922f08c14c814a02b58db1873`;
+this document now tracks the current copied fork snapshot.
 
 ## Required Top-Level Files
 

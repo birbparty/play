@@ -71,6 +71,8 @@ proc checkBackend(backend: cuint, wavPath: string) =
     doAssert Soloud_getBackendString(soloud) != nil
     doAssert Soloud_getBackendSamplerate(soloud) == 44100'u32
     doAssert Soloud_getBackendBufferSize(soloud) > 0'u32
+    discard Soloud_pause(soloud)
+    discard Soloud_resume(soloud)
     Soloud_setGlobalVolume(soloud, 0.5'f32)
     doAssert Soloud_setMaxActiveVoiceCount(soloud, 8'u32) == 0
 

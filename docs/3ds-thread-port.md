@@ -1,7 +1,7 @@
 # SoLoud 3DS Thread Port
 
 `vendor/soloud/` includes the birbparty SoLoud fork commit
-`bbf82cf6a46634d6b2765c40232b1bb1de3bcf55`, pushed on branch
+`412011ec5c950ebf85f717b57722bb9298329686`, pushed on branch
 `feat/3ds-support`.
 
 That fork line includes the earlier thread-port commit, which adds a `__3DS__`
