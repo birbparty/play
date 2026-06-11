@@ -1,12 +1,12 @@
 # SoLoud 3DS Thread Port
 
 `vendor/soloud/` includes the birbparty SoLoud fork commit
-`208871b405a5348979dc4e7e3f248b47b8c74653`, pushed on branch
+`412011ec5c950ebf85f717b57722bb9298329686`, pushed on branch
 `feat/3ds-support`.
 
-That fork commit adds a `__3DS__` branch to `src/core/soloud_thread.cpp` so
-SoLoud's core thread and mutex helpers no longer fall through to pthreads when
-building with devkitARM/libctru.
+That fork line includes the earlier thread-port commit, which adds a `__3DS__`
+branch to `src/core/soloud_thread.cpp` so SoLoud's core thread and mutex helpers
+no longer fall through to pthreads when building with devkitARM/libctru.
 
 ## Implemented Mapping
 

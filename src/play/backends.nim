@@ -32,12 +32,8 @@ const
 when defined(playPlatformVita):
   const vitaHomebrewBackend* = Backend(SOLOUD_VITA_HOMEBREW)
 
-when defined(playPlatform3ds) and defined(playHasCtruNdspBackend):
-  const playCtruNdspBackendId* {.intdefine.} = -1
-  static:
-    doAssert playCtruNdspBackendId >= 0,
-      "define playCtruNdspBackendId after vendored SoLoud includes CTRU_NDSP"
-  const ctruNdspBackend* = Backend(uint32(playCtruNdspBackendId))
+when defined(playPlatform3ds):
+  const ctruNdspBackend* = Backend(SOLOUD_CTRU_NDSP)
 
 proc `==`*(a, b: Backend): bool {.borrow.}
 
@@ -60,7 +56,7 @@ proc rawInitFlags*(flags: InitFlags): cuint =
 proc platformDefaultBackend*(): Backend =
   when defined(playPlatformVita):
     vitaHomebrewBackend
-  elif defined(playPlatform3ds) and defined(playHasCtruNdspBackend):
+  elif defined(playPlatform3ds):
     ctruNdspBackend
   else:
     defaultBackend

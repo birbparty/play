@@ -10,9 +10,9 @@ static:
   when defined(playPlatformVita):
     doAssert rawBackendId(vitaHomebrewBackend) == SOLOUD_VITA_HOMEBREW
 
-  when defined(playPlatform3ds) and defined(playHasCtruNdspBackend):
-    doAssert rawBackendId(ctruNdspBackend) == uint32(playCtruNdspBackendId)
-  elif defined(playHasCtruNdspBackend):
+  when defined(playPlatform3ds):
+    doAssert rawBackendId(ctruNdspBackend) == SOLOUD_CTRU_NDSP
+  else:
     doAssert not compiles(ctruNdspBackend)
 
 proc checkRawFlags() =
@@ -46,7 +46,7 @@ proc checkInitOptions() =
 proc checkPlatformDefault() =
   when defined(playPlatformVita):
     doAssert platformDefaultBackend() == vitaHomebrewBackend
-  elif defined(playPlatform3ds) and defined(playHasCtruNdspBackend):
+  elif defined(playPlatform3ds):
     doAssert platformDefaultBackend() == ctruNdspBackend
   else:
     doAssert platformDefaultBackend() == defaultBackend

@@ -8,12 +8,12 @@ fork intended for `play` vendoring.
 - Local checkout: `~/git/soloud`
 - Remote: `git@github.com:birbparty/soloud.git`
 - Branch inspected: `feat/3ds-support`
-- Commit inspected: `e82fd32c1f62183922f08c14c814a02b58db1873`
-- Worktree status at audit time: clean; inspected commit matches local
-  `master` / `origin/master`
+- Commit inspected: `412011ec5c950ebf85f717b57722bb9298329686`
+- Worktree status at audit time: clean; inspected commit matches the vendored
+  snapshot recorded in `docs/soloud-vendor.md`
 
-Use this commit as the initial audit reference only. The vendoring bead should
-record the exact commit that is copied into `vendor/soloud/`.
+The original audit began from `e82fd32c1f62183922f08c14c814a02b58db1873`;
+this document now tracks the current copied fork snapshot.
 
 ## Required Top-Level Files
 
@@ -58,14 +58,14 @@ consistently in the fork before re-vendoring.
 | `COREAUDIO` | `SOLOUD_COREAUDIO` | 11 |
 | `OPENSLES` | `SOLOUD_OPENSLES` | 12 |
 | `VITA_HOMEBREW` | `SOLOUD_VITA_HOMEBREW` | 13 |
-| `MINIAUDIO` | `SOLOUD_MINIAUDIO` | 14 |
-| `NOSOUND` | `SOLOUD_NOSOUND` | 15 |
-| `NULLDRIVER` | `SOLOUD_NULLDRIVER` | 16 |
-| `BACKEND_MAX` | `SOLOUD_BACKEND_MAX` | 17 |
+| `CTRU_NDSP` | `SOLOUD_CTRU_NDSP` | 14 |
+| `MINIAUDIO` | `SOLOUD_MINIAUDIO` | 15 |
+| `NOSOUND` | `SOLOUD_NOSOUND` | 16 |
+| `NULLDRIVER` | `SOLOUD_NULLDRIVER` | 17 |
+| `BACKEND_MAX` | `SOLOUD_BACKEND_MAX` | 18 |
 
-There is no 3DS / libctru / NDSP backend enum yet. Adding one requires updates
-to `include/soloud.h`, `include/soloud_c.h`, `src/core/soloud.cpp`, backend
-source files, and the C API generation path.
+The vendored fork now includes a 3DS / libctru / NDSP backend enum and matching
+C API enum. See `docs/3ds-backend-impl.md` for the implementation record.
 
 ## Backend Inventory
 
@@ -75,10 +75,11 @@ Backends present under `src/backend/`:
   `opensles`, `oss`, `portaudio`, `sdl`, `sdl_static`, `sdl2_static`, `wasapi`,
   `winmm`, `xaudio2`
 - Test/headless: `nosound`, `null`
-- Console/homebrew: `vita_homebrew`
+- Console/homebrew: `ctru_ndsp`, `vita_homebrew`
 
 `src/core/soloud.cpp` has dispatch guarded by backend defines including
-`WITH_VITA_HOMEBREW`, `WITH_NOSOUND`, `WITH_NULL`, and `WITH_MINIAUDIO`.
+`WITH_CTRU_NDSP`, `WITH_VITA_HOMEBREW`, `WITH_NOSOUND`, `WITH_NULL`, and
+`WITH_MINIAUDIO`.
 
 `WITH_NULL` only initializes when explicitly requested as `NULLDRIVER`; it is
 not an `AUTO` fallback. `WITH_NOSOUND` can participate in `AUTO` selection.
@@ -118,19 +119,14 @@ still be treated as unsupported until the Vita evaluation bead proves otherwise.
 
 ## 3DS Backend Status
 
-No 3DS backend directory was found under `src/backend/`, and no C API enum value
-exists for a 3DS backend.
+The fork includes `src/backend/ctru_ndsp/soloud_ctru_ndsp.cpp`, the
+`SOLOUD_CTRU_NDSP` C API enum, and `WITH_CTRU_NDSP` dispatch in
+`src/core/soloud.cpp`.
 
-Required fork work before `play` can select a real 3DS backend:
-
-- Add a backend directory such as `src/backend/ctru_ndsp/`.
-- Add a C++ enum entry in `include/soloud.h`.
-- Regenerate or update `include/soloud_c.h` with the matching `SOLOUD_*` enum.
-- Add dispatch in `src/core/soloud.cpp`, guarded by a define such as
-  `WITH_CTRU_NDSP`.
-- Implement NDSP initialization, wave-buffer ownership, and a C++/libctru audio
-  thread that calls SoLoud mixing without entering the Nim runtime.
-- Document the real hardware `dspfirm.cdc` prerequisite in `play`.
+The backend initializes NDSP, owns linear-memory wave buffers, and creates a
+C++/libctru audio thread that calls SoLoud mixing without entering the Nim
+runtime. The real hardware `dspfirm.cdc` prerequisite remains documented in
+`docs/3ds-backend-design.md`.
 
 The documented NULLDRIVER plus explicit pump approach remains a fallback only.
 It does not provide the same backend-owned thread and mutex behavior as a real
@@ -144,16 +140,16 @@ in-tree backend.
 - `createThread`, `wait`, `release`, and `sleep`
 - a small thread pool abstraction
 
-`src/core/soloud_thread.cpp` currently has two implementations:
+`src/core/soloud_thread.cpp` currently has three implementations:
 
 - Windows: `CRITICAL_SECTION` and `CreateThread`
+- 3DS: libctru `LightLock`, `threadCreate`, `threadJoin`, `svcSleepThread`, and
+  `osGetTime`
 - Everything else: pthreads (`pthread_mutex_t`, `pthread_create`,
   `pthread_join`, `nanosleep`, `clock_gettime`)
 
-There is no libctru implementation. This is a blocking 3DS gap because devkitARM
-does not provide pthreads in the target environment expected by this project.
-The 3DS thread-port bead should add libctru mutex/thread/sleep/time support in
-the SoLoud fork before the 3DS NDSP backend implementation.
+The libctru implementation is required because devkitARM does not provide
+pthreads in the target environment expected by this project.
 
 ## C API Availability For Phase 1
 
@@ -232,7 +228,7 @@ Console-specific additions:
 
 - Vita: `src/backend/vita_homebrew/soloud_vita_homebrew.cpp` plus VitaSDK
   compile/link flags.
-- 3DS: not present yet; add the future `ctru_ndsp` backend after fork work.
+- 3DS: `ctru_ndsp` is present under `WITH_CTRU_NDSP`.
 
 Avoid compiling optional sources that require unavailable third-party libraries
 unless a later bead explicitly enables that feature, for example OpenMPT or
@@ -240,11 +236,8 @@ dynamic OpenAL/PortAudio loader code.
 
 ## Phase-1 Gaps
 
-- No 3DS backend enum, dispatch, or backend directory exists yet.
-- `soloud_thread.cpp` falls back to pthreads on non-Windows targets; it needs a
-  libctru implementation for 3DS.
 - Vita backend exists but still needs a real VitaSDK compile/evaluation pass.
 - `soloud_c.h` is generated; any backend enum changes must be regenerated in
   the fork rather than patched only in `play`.
-- The final vendored snapshot SHA may differ from this audit SHA after required
-  Vita/3DS fork changes.
+- Future 3DS work still needs example cross-compiles and real hardware
+  verification.

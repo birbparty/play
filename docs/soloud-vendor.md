@@ -8,7 +8,7 @@
 - Source checkout: `~/git/soloud`
 - Remote: `git@github.com:birbparty/soloud.git`
 - Branch copied: `feat/3ds-support`
-- Commit copied: `208871b405a5348979dc4e7e3f248b47b8c74653`
+- Commit copied: `412011ec5c950ebf85f717b57722bb9298329686`
 - Copy method: `git -C ~/git/soloud archive --format=tar HEAD | tar -x -C vendor/soloud`
 
 The vendored file count matches the fork's tracked file count at the copied
