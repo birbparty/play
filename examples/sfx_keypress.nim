@@ -1,4 +1,4 @@
-import std/[os, strutils]
+import std/[os, strutils, terminal]
 
 import play
 import common/assets
@@ -34,6 +34,43 @@ proc logFailure(config: SfxKeypressConfig, label: string, result: PlayResult) =
   if config.verbose and not result.ok:
     echo label, ": ", result.error.message
 
+proc playForKey(
+  key: char,
+  config: SfxKeypressConfig,
+  sound: Sound,
+  activeHandles: var seq[Handle],
+  demoResult: var SfxKeypressResult
+): bool =
+  case actionForKey(key)
+  of playSfx:
+    log(config, "playing WAV SFX")
+    let handle = play(sound, sfxBus)
+    if handle.isValid:
+      activeHandles.add(handle)
+      inc demoResult.playedCount
+      if config.holdMs > 0:
+        sleep(config.holdMs)
+  of quitExample:
+    demoResult.quitRequested = true
+    return false
+  else:
+    discard
+
+  true
+
+proc runInteractiveKeys(
+  config: SfxKeypressConfig,
+  sound: Sound,
+  activeHandles: var seq[Handle],
+  demoResult: var SfxKeypressResult
+) =
+  if config.verbose:
+    echo "Press s or space for SFX, q to quit."
+
+  while true:
+    if not playForKey(getch(), config, sound, activeHandles, demoResult):
+      break
+
 proc runSfxKeypressDemo*(config = defaultSfxKeypressConfig()): SfxKeypressResult =
   let initResult = init(config.options)
   if not initResult.ok:
@@ -54,21 +91,12 @@ proc runSfxKeypressDemo*(config = defaultSfxKeypressConfig()): SfxKeypressResult
 
     result.soundLoaded = true
 
-    for key in config.keys:
-      case actionForKey(key)
-      of playSfx:
-        log(config, "playing WAV SFX")
-        let handle = play(sound.sound, sfxBus)
-        if handle.isValid:
-          activeHandles.add(handle)
-          inc result.playedCount
-          if config.holdMs > 0:
-            sleep(config.holdMs)
-      of quitExample:
-        result.quitRequested = true
-        break
-      else:
-        discard
+    if config.keys.len == 0:
+      runInteractiveKeys(config, sound.sound, activeHandles, result)
+    else:
+      for key in config.keys:
+        if not playForKey(key, config, sound.sound, activeHandles, result):
+          break
 
     result.ok = result.initialized and result.soundLoaded and result.playedCount > 0
   finally:
@@ -77,15 +105,6 @@ proc runSfxKeypressDemo*(config = defaultSfxKeypressConfig()): SfxKeypressResult
     if sound.ok:
       sound.sound.dispose()
     shutdown()
-
-proc readInteractiveKeys(config: SfxKeypressConfig): string =
-  if config.verbose:
-    echo "Press Enter after keys. Use s or space for SFX, q to quit."
-  let line = stdin.readLine()
-  if line.len == 0:
-    "s"
-  else:
-    line
 
 proc configFromArgs*(args: seq[string]): SfxKeypressConfig =
   result = defaultSfxKeypressConfig()
@@ -105,9 +124,6 @@ proc configFromArgs*(args: seq[string]): SfxKeypressConfig =
         result.verbose = false
       else:
         discard
-
-  if result.keys.len == 0:
-    result.keys = readInteractiveKeys(result)
 
 when isMainModule:
   let demo = runSfxKeypressDemo(configFromArgs(commandLineParams()))
