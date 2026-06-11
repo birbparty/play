@@ -32,9 +32,11 @@ The fork contains the expected zlib license and source layout for vendoring:
 - `src/audiosource/wav/*`
 - `src/filter/*`
 
-`include/soloud_c.h` and `src/c_api/soloud_c.cpp` are generated files. Do not
-edit them by hand; backend enum additions must land in the fork's generator
-flow or be regenerated consistently in the fork before re-vendoring.
+`include/soloud_c.h` and `src/c_api/soloud_c.cpp` are generated files. In this
+fork, start with `scripts/makeglue.py` and `scripts/soloud_codegen.py` when
+changing generated C API output. Do not edit generated files by hand; backend
+enum additions must land in the fork's generator flow or be regenerated
+consistently in the fork before re-vendoring.
 
 ## Backend Enum Values
 
@@ -110,6 +112,10 @@ Gaps to verify in the Vita evaluation bead:
   rejects non-44100/non-stereo parameters.
 - Whether shutdown remains clean if thread creation or buffer allocation fails.
 
+Default `Soloud::init()` currently dispatches with 44100 Hz and 2 channels
+before calling the Vita backend; explicit non-44100 or non-stereo init should
+still be treated as unsupported until the Vita evaluation bead proves otherwise.
+
 ## 3DS Backend Status
 
 No 3DS backend directory was found under `src/backend/`, and no C API enum value
@@ -153,11 +159,11 @@ the SoLoud fork before the 3DS NDSP backend implementation.
 
 The generated C API exposes the key phase-1 symbols:
 
-- Engine lifecycle and backend metadata:
+- Engine lifecycle, backend metadata, and master volume:
   `Soloud_create`, `Soloud_destroy`, `Soloud_init`, `Soloud_initEx`,
   `Soloud_deinit`, `Soloud_getErrorString`, `Soloud_getBackendId`,
   `Soloud_getBackendString`, `Soloud_getBackendSamplerate`,
-  `Soloud_getBackendBufferSize`
+  `Soloud_getBackendBufferSize`, `Soloud_setGlobalVolume`
 - Playback and handles:
   `Soloud_play`, `Soloud_playEx`, `Soloud_playBackground`,
   `Soloud_playBackgroundEx`, `Soloud_stop`, `Soloud_stopAll`,
@@ -185,20 +191,42 @@ and stop-after-fade scheduling.
 
 ## Initial Compile-Unit Inventory
 
-The vendoring and compile-model beads should start with this conservative
-host/headless set:
+The generated `src/c_api/soloud_c.cpp` wraps the full generated SoLoud C API,
+not only the phase-1 `play` surface. It includes wrappers for filters and
+non-WAV audio sources such as `Ay`, `Monotone`, `Noise`, `Openmpt`, `Queue`,
+`Sfxr`, `Speech`, `TedSid`, `Vic`, and `Vizsn`.
 
-- `src/c_api/soloud_c.cpp`
-- all `src/core/*.cpp`
-- `src/backend/null/soloud_null.cpp`
-- `src/backend/nosound/soloud_nosound.cpp`
-- `src/backend/miniaudio/soloud_miniaudio.cpp` for desktop
-- `src/audiosource/wav/soloud_wav.cpp`
-- `src/audiosource/wav/soloud_wavstream.cpp`
-- `src/audiosource/wav/dr_impl.cpp`
-- `src/audiosource/wav/stb_vorbis.c`
-- `src/filter/*.cpp` as needed once filters are exposed or linked through
-  generated C API references
+The compile-model bead must choose and verify one of these models:
+
+1. Compile a broad generated-C-API closure:
+   - `src/c_api/soloud_c.cpp`
+   - all `src/core/*.cpp`
+   - selected backend files such as `src/backend/null/soloud_null.cpp`,
+     `src/backend/nosound/soloud_nosound.cpp`, and
+     `src/backend/miniaudio/soloud_miniaudio.cpp`
+   - `src/filter/*.cpp`
+   - `src/audiosource/wav/soloud_wav.cpp`
+   - `src/audiosource/wav/soloud_wavstream.cpp`
+   - `src/audiosource/wav/dr_impl.cpp`
+   - `src/audiosource/wav/stb_vorbis.c`
+   - generated-wrapper audio source implementations referenced by
+     `soloud_c.cpp`, including `src/audiosource/ay/*.cpp`,
+     `src/audiosource/monotone/soloud_monotone.cpp`,
+     `src/audiosource/noise/soloud_noise.cpp`,
+     `src/audiosource/sfxr/soloud_sfxr.cpp`,
+     `src/audiosource/speech/*.cpp`, `src/audiosource/tedsid/*.cpp`,
+     `src/audiosource/vic/soloud_vic.cpp`, and
+     `src/audiosource/vizsn/soloud_vizsn.cpp`
+   - an explicit `openmpt` decision: either compile the OpenMPT wrapper and
+     satisfy its library requirements, or regenerate/prune the C API so OpenMPT
+     wrappers are not emitted.
+2. Regenerate or maintain a reduced C API in the SoLoud fork for the phase-1
+   wrapper surface before vendoring. Under this model, the reduced
+   `soloud_c.cpp` must not define wrappers for omitted SoLoud types.
+
+Do not treat a small WAV/core/backend source list as link-verified with the
+unmodified generated `soloud_c.cpp`. The compile-model bead must prove the
+chosen source closure with the Nim `{.compile.}` flow.
 
 Console-specific additions:
 
