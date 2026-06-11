@@ -62,6 +62,8 @@ tests/fixtures/test_fixtures
 tests/fixtures/test_fixtures.exe
 tests/stress/test_realtime_boundary
 tests/stress/test_realtime_boundary.exe
+tests/stress/test_host_stress
+tests/stress/test_host_stress.exe
 tests/results/
 stubs/*.a
 

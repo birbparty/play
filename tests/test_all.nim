@@ -17,6 +17,7 @@ import examples/example_assets_spec
 import examples/music_fades_spec
 import examples/sfx_keypress_spec
 import fixtures/fixtures_spec
+import stress/host_stress_spec
 import stress/realtime_boundary_spec
 import wrapper/assets_spec
 import wrapper/buses_spec
