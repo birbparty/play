@@ -6,7 +6,9 @@ version       = "0.1.0"
 author        = "birbparty"
 description   = "Nim audio library for games built on SoLoud"
 license       = "Zlib"
-srcDir        = "src"
+srcDir        = "."
+installFiles  = @["play.nim"]
+installDirs   = @["play", "vendor"]
 
 # Dependencies
 
@@ -21,6 +23,7 @@ requires "https://github.com/mattsp1290/bddy#34287484337fbad6626525062fe27d28fcb
 
 task test, "Run the play test suite":
   # Keep this task as the aggregation point as future beads add bddy binaries.
+  exec "sh tests/consumer/verify_consumer.sh"
   exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -r tests/bindings/test_soloud_raw.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_soloud_raw.nim"

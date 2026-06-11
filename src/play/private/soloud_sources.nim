@@ -8,8 +8,14 @@
 import std/os
 
 const
-  playRoot = currentSourcePath.parentDir.parentDir.parentDir.parentDir
-  soloudRoot = playRoot / "vendor" / "soloud"
+  sourceDir = currentSourcePath.parentDir
+  installedPackageRoot = sourceDir.parentDir.parentDir
+  sourceTreeRoot = installedPackageRoot.parentDir
+  soloudRoot =
+    when dirExists(installedPackageRoot / "vendor" / "soloud"):
+      installedPackageRoot / "vendor" / "soloud"
+    else:
+      sourceTreeRoot / "vendor" / "soloud"
   soloudInclude = soloudRoot / "include"
   soloudSrc = soloudRoot / "src"
 
