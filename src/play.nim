@@ -4,4 +4,8 @@
 ## land. This file intentionally stays minimal until the lifecycle, asset,
 ## playback, handle, bus, and fade APIs are implemented.
 
+import play/lifecycle
+
+export lifecycle
+
 const playVersion* = "0.1.0"
