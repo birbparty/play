@@ -84,7 +84,7 @@ spec "host audio stress":
       var activeAfterShutdown = 1'u32
     act:
       configResult = engine.setVoiceOptions(voiceOptions(maxActiveVoices = stressVoiceLimit))
-      initResult = engine.init(initOptions(backend = noSoundBackend))
+      initResult = engine.init(initOptions(backend = nullBackend))
 
       for _ in 0 ..< voicePressureCount:
         handles.add engine.playSound(soundResult.sound)

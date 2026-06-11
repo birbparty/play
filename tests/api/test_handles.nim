@@ -118,6 +118,7 @@ runCase("pauses, resumes, loops, changes volume, and stops a live sound handle")
 
 runCase("keeps stopped handles invalid after shutdown"):
   let soundResult = loadSound(fixturePath("generated", "tone_sfx.wav"))
+  var disposed = false
   try:
     doAssert soundResult.ok
 
@@ -128,11 +129,13 @@ runCase("keeps stopped handles invalid after shutdown"):
     doAssert handle.isValid
     doAssert stop(handle).ok
     doAssert handle.isValid == false
+    soundResult.sound.dispose()
+    disposed = true
     shutdown()
     doAssert handle.isValid == false
     assertInvalid(pause(handle))
   finally:
-    if soundResult.ok:
+    if soundResult.ok and not disposed:
       soundResult.sound.dispose()
     shutdown()
 
