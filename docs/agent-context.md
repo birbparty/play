@@ -17,6 +17,10 @@ that scope from future middleware work.
   direction only; do not treat their larger feature sets or repository layouts
   as phase-1 requirements.
 
+If source documents conflict, the roadmap and phase-1 task-graph prompt
+supersede older phase numbering, target lists, and repository layouts in
+`docs/soloud.md` and `docs/clean-room*.md`.
+
 ## Phase-1 Product Scope
 
 Phase 1 ships a small, Nim-first playback library named `play`. Game code
@@ -95,8 +99,8 @@ Phase 1 targets:
   `vita_homebrew` backend before designing replacement work.
 
 The public API must remain identical across platforms. Platform selection should
-use Nim defines matching the consumer conventions: `-d:ds3` for 3DS and
-`-d:vita` for Vita.
+use Nim defines matching the existing clckr consumer conventions: `-d:ds3` for
+3DS and `-d:vita` for Vita.
 
 3DS backend work has a prerequisite: port SoLoud thread and mutex primitives to
 libctru in the fork, because devkitARM does not provide pthreads. A real 3DS
@@ -144,6 +148,11 @@ Phase-1 test coverage should include:
 
 CI should run a desktop matrix for Linux, macOS, and Windows, then cross-compile
 the examples for 3DS and Vita without attempting hardware execution.
+
+Final phase-1 acceptance also requires three example programs: a WAV SFX
+keypress example, a looping streamed OGG music fade example, and a bus volume
+demo. Agents can build and run these on desktop, cross-compile them for 3DS and
+Vita, and document the remaining real-hardware checks as human gates.
 
 ## Packaging And Consumption
 
