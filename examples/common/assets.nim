@@ -4,9 +4,16 @@ import std/os
 
 import play
 
+when defined(playPlatform3ds) or defined(playPlatformVita):
+  const
+    examplesRoot* = "examples"
+    repoRoot* = "."
+else:
+  const
+    examplesRoot* = currentSourcePath().parentDir.parentDir
+    repoRoot* = examplesRoot.parentDir
+
 const
-  examplesRoot* = currentSourcePath().parentDir.parentDir
-  repoRoot* = examplesRoot.parentDir
   exampleAssetRoot* = examplesRoot / "assets"
   fixtureAssetRoot* = repoRoot / "tests" / "fixtures" / "generated"
 
