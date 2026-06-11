@@ -5,6 +5,7 @@ import play
 import common/test_helpers
 {.warning[UnusedImport]: off.}
 import api/lifecycle_spec
+import api/types_spec
 import fixtures/fixtures_spec
 import wrapper/assets_spec
 import wrapper/errors_spec
