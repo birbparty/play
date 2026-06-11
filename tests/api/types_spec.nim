@@ -36,3 +36,5 @@ spec "public audio types":
       compiles(musicBus.id) == false
       compiles(rawBackendId(defaultBackend)) == false
       compiles(Bus_create()) == false
+      compiles(rawBus(nil, musicBus)) == false
+      compiles(rawBusHandle(nil, musicBus)) == false

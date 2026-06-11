@@ -1,40 +1,20 @@
-## Fixed bus volume controls.
+## Nim-first public fixed bus volume controls.
 
-import play/bindings/soloud_raw as raw
 import play/errors
-import play/private/lifecycle
-import play/types as publicTypes
+import play/private/buses as engine_buses
+import play/private/global_engine
+import play/types
 
-export publicTypes
+export types
 
-proc invalidEngine(): PlayResult =
-  failure(invalidHandleError("play engine is not initialized"))
+proc setMasterVolume*(volume: float32): PlayResult =
+  engine_buses.setMasterVolume(currentEngine(), volume)
 
-proc invalidBus(): PlayResult =
-  failure(invalidHandleError("fixed bus is not initialized"))
+proc setMusicVolume*(volume: float32): PlayResult =
+  engine_buses.setMusicVolume(currentEngine(), volume)
 
-proc setMasterVolume*(engine: Engine, volume: float32): PlayResult =
-  let soloud = engine.rawHandle()
-  if soloud == nil:
-    return invalidEngine()
+proc setSfxVolume*(volume: float32): PlayResult =
+  engine_buses.setSfxVolume(currentEngine(), volume)
 
-  raw.Soloud_setGlobalVolume(soloud, cfloat(volume))
-  success()
-
-proc setBusVolume(engine: Engine, bus: publicTypes.Bus, volume: float32): PlayResult =
-  let soloud = engine.rawHandle()
-  let busHandle = engine.rawBusHandle(bus)
-  if soloud == nil or busHandle == 0'u32:
-    return invalidBus()
-
-  raw.Soloud_setVolume(soloud, busHandle, cfloat(volume))
-  success()
-
-proc setMusicVolume*(engine: Engine, volume: float32): PlayResult =
-  engine.setBusVolume(musicBus, volume)
-
-proc setSfxVolume*(engine: Engine, volume: float32): PlayResult =
-  engine.setBusVolume(sfxBus, volume)
-
-proc setUiVolume*(engine: Engine, volume: float32): PlayResult =
-  engine.setBusVolume(uiBus, volume)
+proc setUiVolume*(volume: float32): PlayResult =
+  engine_buses.setUiVolume(currentEngine(), volume)

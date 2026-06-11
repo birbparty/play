@@ -5,6 +5,7 @@ import play
 import common/test_helpers
 {.warning[UnusedImport]: off.}
 import api/assets_spec
+import api/buses_spec
 import api/lifecycle_spec
 import api/playback_spec
 import api/types_spec
