@@ -6,9 +6,13 @@ examples/phase1_public_api.exe
 tests/examples/test_example_assets
 tests/examples/test_bus_volume_demo
 examples/bus_volume_demo
+tests/examples/test_music_fades
+examples/music_fades
 tests/examples/test_example_assets.exe
 tests/examples/test_bus_volume_demo.exe
 examples/bus_volume_demo.exe
+tests/examples/test_music_fades.exe
+examples/music_fades.exe
 tests/test_all
 tests/test_all.exe
 tests/test_soloud_compile
