@@ -10,6 +10,7 @@ import api/fades_spec
 import api/handles_spec
 import api/lifecycle_spec
 import api/playback_spec
+import api/public_api_spec
 import api/types_spec
 import fixtures/fixtures_spec
 import wrapper/assets_spec
