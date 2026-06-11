@@ -9,6 +9,7 @@ import api/lifecycle_spec
 import api/types_spec
 import fixtures/fixtures_spec
 import wrapper/assets_spec
+import wrapper/buses_spec
 import wrapper/errors_spec
 import wrapper/handles_spec
 import wrapper/lifecycle_spec

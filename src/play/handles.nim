@@ -21,21 +21,21 @@ proc isValid*(engine: Engine, handle: Handle): bool =
   soloud != nil and handle.isValid and
     raw.Soloud_isValidVoiceHandle(soloud, handle.rawVoiceHandle) != 0
 
-proc playSound*(engine: Engine, sound: Sound): Handle =
-  let soloud = engine.rawHandle()
+proc playSound*(engine: Engine, sound: Sound, bus = defaultSoundBus): Handle =
+  let rawBus = engine.rawBus(bus)
   let source = sound.audioSource()
-  if soloud == nil or source == nil:
+  if rawBus == nil or source == nil:
     return noHandle
 
-  handleFromRaw(raw.Soloud_play(soloud, source))
+  handleFromRaw(raw.Bus_play(rawBus, source))
 
 proc playMusic*(engine: Engine, music: Music): Handle =
-  let soloud = engine.rawHandle()
+  let rawBus = engine.rawBus(musicBus)
   let source = music.audioSource()
-  if soloud == nil or source == nil:
+  if rawBus == nil or source == nil:
     return noHandle
 
-  handleFromRaw(raw.Soloud_play(soloud, source))
+  handleFromRaw(raw.Bus_play(rawBus, source))
 
 proc pause*(engine: Engine, handle: Handle): PlayResult =
   let soloud = engine.rawHandle()
