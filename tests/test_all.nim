@@ -1,3 +1,7 @@
+import bddy
 import play
 
-doAssert playVersion.len > 0
+spec "play package":
+  it "exports package metadata":
+    verify:
+      playVersion.len > 0
