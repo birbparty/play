@@ -2,6 +2,7 @@
 
 import play/backends
 import play/errors
+import play/private/global_engine
 import play/private/lifecycle as engine_lifecycle
 
 export errors
@@ -15,31 +16,29 @@ type
     lifecycleStopped
     lifecycleRunning
 
-var engine: Engine
-
 proc init*(options = initOptions()): PlayResult =
-  if engine == nil:
-    engine = newEngine()
+  let engine = ensureEngine()
 
   result = engine.init(options)
   if not result.ok and not engine.isInitialized:
-    engine.destroy()
-    engine = nil
+    clearEngine()
 
 proc shutdown*() =
+  let engine = currentEngine()
   if engine == nil:
     return
 
-  engine.destroy()
-  engine = nil
+  clearEngine()
 
 proc lifecycleState*(): LifecycleState =
+  let engine = currentEngine()
   if engine != nil and engine.isInitialized:
     lifecycleRunning
   else:
     lifecycleStopped
 
 proc activeBackend*(): Backend =
+  let engine = currentEngine()
   if engine == nil:
     return defaultBackend
 

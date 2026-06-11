@@ -6,10 +6,12 @@
 
 import play/assets
 import play/lifecycle
+import play/playback
 import play/types
 
 export assets
 export lifecycle
+export playback
 export types
 
 const playVersion* = "0.1.0"

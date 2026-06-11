@@ -101,6 +101,7 @@ proc Bus_playEx*(
   aPan: cfloat,
   aPaused: cint
 ): VoiceHandle {.importc, cdecl.}
+proc Bus_getActiveVoiceCount*(aBus: Bus): cuint {.importc, cdecl.}
 proc Bus_setVolume*(aBus: Bus, aVolume: cfloat) {.importc, cdecl.}
 proc Bus_stop*(aBus: Bus) {.importc, cdecl.}
 
