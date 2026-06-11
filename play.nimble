@@ -25,7 +25,9 @@ task test, "Run the play test suite":
   # Keep this task as the aggregation point as future beads add bddy binaries.
   exec "sh tests/consumer/verify_consumer.sh"
   exec "nim c --path:src --path:examples examples/phase1_public_api.nim"
+  exec "nim c --path:src --path:examples -r examples/bus_volume_demo.nim --quiet"
   exec "nim c --path:src --path:examples --path:tests -r tests/examples/test_example_assets.nim"
+  exec "nim c --path:src --path:examples --path:tests -r tests/examples/test_bus_volume_demo.nim"
   exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -r tests/bindings/test_soloud_raw.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_soloud_raw.nim"
