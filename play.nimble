@@ -42,6 +42,7 @@ task test, "Run the play test suite":
   exec "nim c --path:src --path:tests -r tests/api/test_handles.nim"
   exec "nim c --path:src -r tests/api/test_lifecycle.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_playback.nim"
+  exec "nim c --path:src --path:tests -r tests/api/test_public_api.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_types.nim"
   exec "nim c --path:src --path:tests -r tests/fixtures/test_fixtures.nim"
   exec "nim c --path:src --path:tests -r tests/test_all.nim"
