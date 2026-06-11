@@ -70,3 +70,4 @@ spec "public lifecycle API":
       compiles(rawBackendId(defaultBackend)) == false
       compiles(rawInitFlags({clipRoundoff})) == false
       compiles(rawInitArgs(initOptions())) == false
+      compiles(currentEngine()) == false

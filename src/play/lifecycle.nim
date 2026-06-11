@@ -39,6 +39,9 @@ proc lifecycleState*(): LifecycleState =
   else:
     lifecycleStopped
 
+proc currentEngine*(): Engine =
+  engine
+
 proc activeBackend*(): Backend =
   if engine == nil:
     return defaultBackend
