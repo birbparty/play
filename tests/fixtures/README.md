@@ -6,6 +6,7 @@ CC0-compatible. Commercial use by downstream projects must remain permitted.
 For each committed fixture, add provenance next to the asset or in a manifest:
 
 - generation tool and command, for generated assets
+- source parameters, for generated assets
 - source URL, license, and redistribution proof, for third-party assets
 - expected format details that tests rely on, such as sample rate, channels,
   duration, and codec

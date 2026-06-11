@@ -4,7 +4,7 @@ Nim audio library for games built on the birbparty fork of SoLoud.
 
 ## Licensing
 
-`play` is distributed under the zlib license. SoLoud is also zlib-licensed; its
+`play` is distributed under the Zlib license. SoLoud is also Zlib-licensed; its
 vendored license and notices must be preserved when `vendor/soloud/` is added.
 
 Project code, generated assets, and test fixtures must stay under permissive
