@@ -4,9 +4,11 @@
 ## land. This file intentionally stays minimal until the lifecycle, asset,
 ## playback, handle, bus, and fade APIs are implemented.
 
+import play/assets
 import play/lifecycle
 import play/types
 
+export assets
 export lifecycle
 export types
 

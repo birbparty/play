@@ -11,10 +11,6 @@ spec "public audio types":
       music.isDisposed == true
       compiles(sound.handle) == false
       compiles(music.handle) == false
-      compiles(loadSound("tone_sfx.wav")) == false
-      compiles(loadMusic("tone_music.ogg")) == false
-      compiles(SoundResult()) == false
-      compiles(MusicResult()) == false
 
   it "provides cheap opaque handle validity checks":
     given:

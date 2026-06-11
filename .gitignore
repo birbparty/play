@@ -17,6 +17,8 @@ tests/wrapper/test_assets
 tests/wrapper/test_assets.exe
 tests/api/test_lifecycle
 tests/api/test_lifecycle.exe
+tests/api/test_assets
+tests/api/test_assets.exe
 tests/api/test_types
 tests/api/test_types.exe
 tests/fixtures/test_fixtures
