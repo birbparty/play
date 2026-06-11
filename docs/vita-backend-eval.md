@@ -71,9 +71,10 @@ vendor_soloud_src_core_soloud_thread_cpp.o
 
 ## Link Status
 
-A minimal executable that initializes `SoLoud::Soloud::VITA_HOMEBREW` failed to
-link with the current `nim_vita.cfg`-style library set because pthread symbols
-were unresolved from both libstdc++ and SoLoud's generic thread implementation.
+A minimal executable that initializes `SoLoud::Soloud::VITA_HOMEBREW` initially
+failed to link with the pre-`-lpthread` `nim_vita.cfg`-style library set because
+pthread symbols were unresolved from both libstdc++ and SoLoud's generic thread
+implementation.
 
 The smoke object was built from:
 
@@ -120,8 +121,8 @@ Adding `-lpthread` to the grouped VitaSDK runtime libraries fixed the link:
 
 The linked smoke ELF was produced at `/tmp/play_vita_link_smoke.elf`.
 
-This maps to the current `nim_vita.cfg` link group: add `-lpthread` inside the
-`--start-group` / `--end-group` runtime set, next to `-lstdc++`.
+This is reflected in the current `nim_vita.cfg` link group, with `-lpthread`
+inside the `--start-group` / `--end-group` runtime set, next to `-lstdc++`.
 
 Artifact hashes from this evaluation:
 
@@ -147,24 +148,17 @@ patches this backend in the fork.
 `src/play/backends.nim` already selects `vitaHomebrewBackend` as
 `platformDefaultBackend()` when `playPlatformVita` is defined.
 
-`src/play/private/soloud_sources.nim` does not yet compile
-`WITH_VITA_HOMEBREW` or `backend/vita_homebrew/soloud_vita_homebrew.cpp` for
-`playPlatformVita`; Vita currently falls through to the host headless
-`NOSOUND`/`NULLDRIVER` compile closure. A future Vita integration/build bead
-should switch the Vita source closure to the real backend and add `-lpthread` to
-the Vita link group.
+`src/play/private/soloud_sources.nim` now compiles `WITH_VITA_HOMEBREW` and
+`backend/vita_homebrew/soloud_vita_homebrew.cpp` when `playPlatformVita` is
+defined. Vita builds no longer compile the host `NOSOUND`/`NULLDRIVER` backend
+closure.
 
-Follow-up integration checklist:
+`nim_vita.cfg` now includes `-lpthread` inside the grouped VitaSDK runtime
+libraries. `scripts/build_vita_examples.sh` copies that cfg into place, rewrites
+the default VitaSDK root when `VITASDK` is set, builds each example with
+`nim c -d:vita`, and packages the resulting ELF into a `.vpk`.
 
-- In `src/play/private/soloud_sources.nim`, define `WITH_VITA_HOMEBREW` for
-  `playPlatformVita`.
-- Compile `backend/vita_homebrew/soloud_vita_homebrew.cpp` for
-  `playPlatformVita`.
-- Stop compiling `backend/nosound` and `backend/null` for Vita once the real
-  backend is enabled.
-- Add `-lpthread` inside the grouped VitaSDK runtime libraries in
-  `nim_vita.cfg`.
-- Add a Vita link smoke target that exercises `SOLOUD_VITA_HOMEBREW`.
+See `docs/vita-build.md` for the current example build and packaging flow.
 
 ## Conclusion
 

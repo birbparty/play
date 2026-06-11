@@ -54,6 +54,7 @@ fi
 
 require_cmd nim "Install Nim and ensure it is in PATH."
 require_cmd arm-vita-eabi-gcc "Install VitaSDK and ensure $VITASDK/bin is in PATH."
+require_cmd arm-vita-eabi-g++ "Install VitaSDK and ensure $VITASDK/bin is in PATH."
 require_cmd arm-vita-eabi-ar "Install VitaSDK and ensure $VITASDK/bin is in PATH."
 require_cmd vita-elf-create "Install VitaSDK and ensure $VITASDK/bin is in PATH."
 require_cmd vita-make-fself "Install VitaSDK and ensure $VITASDK/bin is in PATH."
@@ -111,8 +112,10 @@ for example in "${examples[@]}"; do
 
   rm -rf "$stage"
   mkdir -p "$stage/sce_sys"
+  mkdir -p "$stage/tests/fixtures"
   cp "$eboot" "$stage/eboot.bin"
   cp "$sfo" "$stage/sce_sys/param.sfo"
+  cp -R "$repo_root/tests/fixtures/generated" "$stage/tests/fixtures/generated"
   rm -f "$vpk"
   ( cd "$stage" && zip -qr "../$name.vpk" . )
   rm -rf "$stage"

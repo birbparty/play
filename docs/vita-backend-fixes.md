@@ -24,19 +24,18 @@ Because the backend builds as-is, this iteration does not modify
 
 ## Follow-Up Work
 
-The remaining Vita work is Play integration, not a SoLoud fork fix. See
-`docs/vita-backend-eval.md` for the full compile/link evidence and detailed
-integration checklist.
+The remaining Vita work after this decision was Play integration, not a SoLoud
+fork fix. That integration now lives in the Play build surface:
 
-- Enable `WITH_VITA_HOMEBREW` under `playPlatformVita` in
-  `src/play/private/soloud_sources.nim`.
-- Compile `backend/vita_homebrew/soloud_vita_homebrew.cpp` for Vita builds.
-- Stop compiling `backend/nosound` and `backend/null` for Vita once the real
-  backend is enabled.
-- Add `-lpthread` to the grouped VitaSDK runtime libraries in `nim_vita.cfg`.
-- Add a Vita link smoke check that initializes `SOLOUD_VITA_HOMEBREW`.
-- Preserve the backend's current 44100 Hz stereo constraints when exposing Vita
-  init options.
+- `src/play/private/soloud_sources.nim` enables `WITH_VITA_HOMEBREW` under
+  `playPlatformVita`.
+- Vita builds compile `backend/vita_homebrew/soloud_vita_homebrew.cpp` instead
+  of the host headless backends.
+- `nim_vita.cfg` includes `-lpthread` in the grouped VitaSDK runtime libraries.
+- `scripts/build_vita_examples.sh` builds and packages the examples with
+  `nim c -d:vita`.
+
+See `docs/vita-build.md` for the current example build and packaging flow.
 
 If a later hardware or example-build pass exposes a Vita backend defect, that
 fix should land in `git@github.com:birbparty/soloud.git` first and then be
