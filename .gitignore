@@ -37,6 +37,8 @@ tests/wrapper/test_fades
 tests/wrapper/test_fades.exe
 tests/wrapper/test_handles
 tests/wrapper/test_handles.exe
+tests/wrapper/test_shutdown_stress
+tests/wrapper/test_shutdown_stress.exe
 tests/wrapper/test_voice_limits
 tests/wrapper/test_voice_limits.exe
 tests/api/test_lifecycle
