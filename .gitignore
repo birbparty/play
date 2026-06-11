@@ -13,6 +13,8 @@ tests/wrapper/test_lifecycle
 tests/wrapper/test_lifecycle.exe
 tests/wrapper/test_errors
 tests/wrapper/test_errors.exe
+tests/api/test_lifecycle
+tests/api/test_lifecycle.exe
 tests/results/
 stubs/*.a
 
