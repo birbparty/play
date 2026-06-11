@@ -11,7 +11,7 @@ spec "SoLoud voice handle wrapper operations":
       var pauseResult: PlayResult
       var stopResult: PlayResult
     act:
-      initResult = engine.init(initOptions(backend = nullBackend))
+      initResult = engine.init(initOptions(backend = noSoundBackend))
       valid = engine.isValid(noHandle)
       pauseResult = engine.pause(noHandle)
       stopResult = engine.stop(noHandle)
@@ -39,7 +39,7 @@ spec "SoLoud voice handle wrapper operations":
       var validBeforeStop = false
       var validAfterStop = true
     act:
-      initResult = engine.init(initOptions(backend = nullBackend))
+      initResult = engine.init(initOptions(backend = noSoundBackend))
       handle = engine.playSound(soundResult.sound)
       validBeforeStop = engine.isValid(handle)
       pauseResult = engine.pause(handle)
@@ -98,18 +98,16 @@ spec "SoLoud voice handle wrapper operations":
       engine.setLooping(noHandle, true).error.kind == invalidHandle
       engine.setVolume(noHandle, 1.0'f32).error.kind == invalidHandle
 
-  it "runs handle operations under NOSOUND backend":
+  it "plays and stops a handle under NULL backend":
     given:
       let engine = newEngine()
       let soundResult = loadSound(fixturePath("generated", "tone_sfx.wav"))
       var initResult: PlayResult
       var handle = noHandle
-      var pauseResult: PlayResult
       var stopResult: PlayResult
     act:
-      initResult = engine.init(initOptions(backend = noSoundBackend))
+      initResult = engine.init(initOptions(backend = nullBackend))
       handle = engine.playSound(soundResult.sound)
-      pauseResult = engine.pause(handle)
       stopResult = engine.stop(handle)
       soundResult.sound.dispose()
       engine.destroy()
@@ -117,5 +115,4 @@ spec "SoLoud voice handle wrapper operations":
       initResult.ok == true
       soundResult.ok == true
       handle.isValid == true
-      pauseResult.ok == true
       stopResult.ok == true

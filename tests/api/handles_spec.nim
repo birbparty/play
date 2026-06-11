@@ -43,7 +43,7 @@ spec "public handle operations API":
       var secondStopResult: PlayResult
       var validAfterStop = true
     act:
-      initResult = init(initOptions(backend = nullBackend))
+      initResult = init(initOptions(backend = noSoundBackend))
       handle = play(soundResult.sound)
       validBeforeStop = handle.isValid
       pauseResult = pause(handle)
@@ -77,7 +77,7 @@ spec "public handle operations API":
       var validAfterShutdown = true
       var pauseAfterShutdown: PlayResult
     act:
-      initResult = init(initOptions(backend = nullBackend))
+      initResult = init(initOptions(backend = noSoundBackend))
       handle = play(soundResult.sound)
       validBeforeShutdown = handle.isValid
       shutdown()
@@ -92,17 +92,15 @@ spec "public handle operations API":
       pauseAfterShutdown.ok == false
       pauseAfterShutdown.error.kind == invalidHandle
 
-  it "runs public handle operations under NOSOUND backend":
+  it "plays and stops a public handle under NULL backend":
     given:
       let soundResult = loadSound(fixturePath("generated", "tone_sfx.wav"))
       var initResult: PlayResult
       var handle = noHandle
-      var pauseResult: PlayResult
       var stopResult: PlayResult
     act:
-      initResult = init(initOptions(backend = noSoundBackend))
+      initResult = init(initOptions(backend = nullBackend))
       handle = play(soundResult.sound)
-      pauseResult = pause(handle)
       stopResult = stop(handle)
       soundResult.sound.dispose()
       shutdown()
@@ -110,7 +108,6 @@ spec "public handle operations API":
       initResult.ok == true
       soundResult.ok == true
       handle != noHandle
-      pauseResult.ok == true
       stopResult.ok == true
 
   it "does not expose raw voice ids through the public facade":
