@@ -4,6 +4,7 @@ htmldocs/
 tests/test_all
 tests/test_all.exe
 tests/results/
+stubs/*.a
 
 # Beads / Dolt files (added by bd init)
 .dolt/
