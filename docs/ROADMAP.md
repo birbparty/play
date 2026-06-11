@@ -14,6 +14,11 @@ Phases 2+ distill `docs/soloud.md`'s feature phases and the long-term vision
 in `docs/clean-room1.md` – `docs/clean-room3.md`; their scope is directional,
 not committed.
 
+`docs/architecture.md` describes the phase-1 architecture and the seams it
+preserves for later middleware systems. `docs/future-roadmap.md` maps those
+seams to the future clean-room roadmap while marking unimplemented systems as
+out of current scope.
+
 ---
 
 ## Phase 1 — Core playback (committed)
