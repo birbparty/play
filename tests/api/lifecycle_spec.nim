@@ -1,5 +1,6 @@
 import bddy
 import play
+import play/lifecycle as lifecycle_module
 
 spec "public lifecycle API":
   it "initializes and shuts down from the top-level play import":
@@ -71,3 +72,4 @@ spec "public lifecycle API":
       compiles(rawInitFlags({clipRoundoff})) == false
       compiles(rawInitArgs(initOptions())) == false
       compiles(currentEngine()) == false
+      compiles(lifecycle_module.currentEngine()) == false

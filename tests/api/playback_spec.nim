@@ -2,11 +2,11 @@ import bddy
 import common/test_helpers
 import play
 import play/bindings/soloud_raw as raw except Bus
-import play/lifecycle as public_lifecycle
+import play/private/global_engine
 import play/private/lifecycle as engine_lifecycle
 
 proc busVoiceCount(bus: Bus): cuint =
-  let engine = public_lifecycle.currentEngine()
+  let engine = currentEngine()
   if engine == nil:
     return 0'u32
 

@@ -10,7 +10,7 @@ import play/playback
 import play/types
 
 export assets
-export lifecycle except currentEngine
+export lifecycle
 export playback
 export types
 
