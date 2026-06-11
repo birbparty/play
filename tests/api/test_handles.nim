@@ -67,6 +67,7 @@ proc writeJUnit(path: string) =
 
 template runCase(caseName: string, body: untyped) =
   block:
+    echo "case start: ", caseName
     let started = epochTime()
     var ok = true
     var message = ""
@@ -75,7 +76,11 @@ template runCase(caseName: string, body: untyped) =
     except AssertionDefect as error:
       ok = false
       message = error.msg
+    except CatchableError as error:
+      ok = false
+      message = $error.name & ": " & error.msg
     cases.add(TestCase(name: caseName, ok: ok, message: message, duration: epochTime() - started))
+    echo "case ", (if ok: "ok: " else: "failed: "), caseName
 
 proc assertInvalid(result: PlayResult) =
   doAssert result.ok == false
@@ -146,6 +151,7 @@ runCase("plays and stops a public handle under NULL backend"):
     shutdown()
 
 const bddyJunit {.strdefine.} = ""
+echo "bddyJunit path: ", (if bddyJunit.len == 0: "<empty>" else: bddyJunit)
 writeJUnit(bddyJunit)
 
 if cases.anyIt(not it.ok):
