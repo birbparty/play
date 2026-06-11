@@ -33,6 +33,7 @@ proc main() =
       if handle.isValid:
         discard setLooping(handle, true)
         discard fadeOutMusic(handle, 1.0)
+        discard stop(handle)
       music.music.dispose()
   finally:
     shutdown()

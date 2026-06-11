@@ -50,7 +50,8 @@ if not sfx.ok:
 
 let music = loadMusic("assets/theme.ogg")
 if music.ok:
-  discard playMusic(music.music)
+  let handle = playMusic(music.music)
+  discard stop(handle)
 
 if sfx.ok:
   sfx.sound.dispose()
@@ -59,7 +60,9 @@ if music.ok:
 ```
 
 `Sound` and `Music` are opaque public asset types. Use `dispose` and
-`isDisposed`; do not inspect raw SoLoud handles.
+`isDisposed`; do not inspect raw SoLoud handles. Keep loaded assets alive while
+any playback handles using them are active. Stop those handles, or let them
+finish and become invalid, before disposing the asset.
 
 ## Playback
 
@@ -134,6 +137,7 @@ if musicResult.ok:
   let handle = fadeInMusic(musicResult.music, 1.5, 0.75'f32)
   discard fadeVolume(handle, 0.4'f32, 0.25)
   discard fadeOutMusic(handle, 1.0)
+  # Keep musicResult.music alive until the scheduled fade-out stop has run.
 ```
 
 Fade timers advance while SoLoud mixes audio. In tests or manual headless pump
@@ -167,7 +171,7 @@ or translate `PlayError` values.
 
 ## Platform Defines
 
-`platformDefaultBackend()` chooses the backend for the target:
+By default, `initOptions()` chooses the backend for the target:
 
 - desktop: SoLoud `AUTO`
 - `-d:playPlatform3ds`: 3DS `ctru_ndsp`
@@ -177,7 +181,6 @@ Common init options:
 
 ```nim
 let options = initOptions(
-  backend = platformDefaultBackend(),
   flags = {clipRoundoff},
   sampleRate = 44100'u32,
   bufferSize = 2048'u32,

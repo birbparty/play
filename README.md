@@ -17,6 +17,9 @@ Game code should not import `play/bindings/soloud_raw`, `play/soloud`, or
 Phase 1 covers:
 
 - lifecycle: `init`, `shutdown`, `withPlay`, `lifecycleState`, `activeBackend`
+- backend options: `initOptions`, `defaultBackend`, `noSoundBackend`,
+  `nullBackend`, `clipRoundoff`, `enableVisualization`, `leftHanded3d`,
+  `noFpuRegisterChange`
 - assets: `loadSound`, `loadMusic`, `dispose`, `isDisposed`
 - playback: `play`, `playMusic`
 - handles: `isValid`, `pause`, `resume`, `stop`, `setLooping`, `setVolume`
