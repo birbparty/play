@@ -3,6 +3,7 @@
 import play/bindings/soloud_raw as raw
 import play/errors
 import play/private/assets as privateAssets
+import play/private/handles as privateHandles
 import play/private/lifecycle
 import play/private/types
 import play/types
@@ -19,7 +20,7 @@ proc fadeVolume*(engine: Engine, handle: Handle, target: float32, seconds: float
   let soloud = engine.rawHandle()
   if soloud == nil:
     return invalidEngine()
-  if not handle.isValid or raw.Soloud_isValidVoiceHandle(soloud, handle.rawVoiceHandle) == 0:
+  if not privateHandles.isValid(engine, handle):
     return invalidVoice()
 
   raw.Soloud_fadeVolume(soloud, handle.rawVoiceHandle, cfloat(target), cdouble(seconds))
@@ -32,6 +33,7 @@ proc fadeInMusic*(engine: Engine, music: Music, seconds: float64, target = 1.0'f
     return noHandle
 
   let rawHandle = raw.Bus_playEx(rawBus, source, 0.0'f32, 0.0'f32, 0)
+  engine.forgetStoppedVoice(rawHandle)
   result = handleFromRaw(rawHandle)
   if result.isValid:
     discard engine.fadeVolume(result, target, seconds)

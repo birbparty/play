@@ -20,6 +20,7 @@ proc invalidVoice(): PlayResult =
 proc isValid*(engine: Engine, handle: Handle): bool =
   let soloud = engine.rawHandle()
   soloud != nil and handle.isValid and
+    not engine.wasStoppedVoice(handle.rawVoiceHandle) and
     raw.Soloud_isValidVoiceHandle(soloud, handle.rawVoiceHandle) != 0
 
 proc playSound*(engine: Engine, sound: Sound, bus = defaultSoundBus): Handle =
@@ -28,7 +29,9 @@ proc playSound*(engine: Engine, sound: Sound, bus = defaultSoundBus): Handle =
   if rawBus == nil or source == nil:
     return noHandle
 
-  handleFromRaw(raw.Bus_play(rawBus, source))
+  let rawHandle = raw.Bus_play(rawBus, source)
+  engine.forgetStoppedVoice(rawHandle)
+  handleFromRaw(rawHandle)
 
 proc playMusic*(engine: Engine, music: Music): Handle =
   let rawBus = engine.rawBus(musicBus)
@@ -36,7 +39,9 @@ proc playMusic*(engine: Engine, music: Music): Handle =
   if rawBus == nil or source == nil:
     return noHandle
 
-  handleFromRaw(raw.Bus_play(rawBus, source))
+  let rawHandle = raw.Bus_play(rawBus, source)
+  engine.forgetStoppedVoice(rawHandle)
+  handleFromRaw(rawHandle)
 
 proc pause*(engine: Engine, handle: Handle): PlayResult =
   let soloud = engine.rawHandle()
@@ -66,6 +71,7 @@ proc stop*(engine: Engine, handle: Handle): PlayResult =
     return invalidVoice()
 
   raw.Soloud_stop(soloud, handle.rawVoiceHandle)
+  engine.rememberStoppedVoice(handle.rawVoiceHandle)
   success()
 
 proc setLooping*(engine: Engine, handle: Handle, looping: bool): PlayResult =

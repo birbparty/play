@@ -16,7 +16,37 @@ type
     sfxBusHandle: raw.VoiceHandle
     uiBus: raw.Bus
     uiBusHandle: raw.VoiceHandle
+    stoppedVoices: seq[raw.VoiceHandle]
     voiceOptions: VoiceOptions
+
+proc forgetStoppedVoice*(engine: Engine, handle: raw.VoiceHandle) =
+  if engine == nil:
+    return
+
+  for index, stopped in engine.stoppedVoices:
+    if stopped == handle:
+      engine.stoppedVoices.delete(index)
+      return
+
+proc rememberStoppedVoice*(engine: Engine, handle: raw.VoiceHandle) =
+  if engine == nil or handle == 0'u32:
+    return
+
+  for stopped in engine.stoppedVoices:
+    if stopped == handle:
+      return
+
+  engine.stoppedVoices.add(handle)
+
+proc wasStoppedVoice*(engine: Engine, handle: raw.VoiceHandle): bool =
+  if engine == nil or handle == 0'u32:
+    return false
+
+  for stopped in engine.stoppedVoices:
+    if stopped == handle:
+      return true
+
+  false
 
 proc destroyBuses(engine: Engine) =
   if engine == nil:
@@ -153,6 +183,7 @@ proc init*(engine: Engine, options = initOptions()): PlayResult =
     return failure(allocationError("SoLoud fixed bus allocation failed"))
 
   engine.initialized = true
+  engine.stoppedVoices.setLen(0)
   success()
 
 proc shutdown*(engine: Engine) =
@@ -160,6 +191,7 @@ proc shutdown*(engine: Engine) =
     return
 
   raw.Soloud_stopAll(engine.handle)
+  engine.stoppedVoices.setLen(0)
   engine.destroyBuses()
   raw.Soloud_deinit(engine.handle)
   engine.initialized = false
@@ -169,6 +201,7 @@ proc destroy*(engine: Engine) =
     return
 
   engine.shutdown()
+  engine.stoppedVoices.setLen(0)
   raw.Soloud_destroy(engine.handle)
   engine.handle = nil
 

@@ -15,5 +15,6 @@ export engine_buses
 export errors
 export engine_fades
 export engine_handles
-export lifecycle except rawHandle, rawBus, rawBusHandle, activeVoiceCount
+export lifecycle except rawHandle, rawBus, rawBusHandle, activeVoiceCount,
+  forgetStoppedVoice, rememberStoppedVoice, wasStoppedVoice
 export voices
