@@ -22,6 +22,12 @@ exe_path() {
   fi
 }
 
+grep_path() {
+  local path
+  path=$(nim_path "$1")
+  grep -F -q "$path" "$2" || grep -F -q "${path//\//\\}" "$2"
+}
+
 cleanup() {
   rm -rf "$tmp_root"
 }
@@ -42,14 +48,14 @@ run_and_check() {
     exit 1
   fi
 
-  if grep -F -q "$(nim_path "$tmp_root/consumer-host/vendor/soloud")" "$log" ||
-      grep -F -q "$(nim_path "$tmp_root/consumer-console/vendor/soloud")" "$log"; then
+  if grep_path "$tmp_root/consumer-host/vendor/soloud" "$log" ||
+      grep_path "$tmp_root/consumer-console/vendor/soloud" "$log"; then
     cat "$log"
     echo "Consumer-local vendor/soloud was used unexpectedly" >&2
     exit 1
   fi
 
-  if ! grep -F -q "$(nim_path "$repo_root/vendor/soloud/src/c_api/soloud_c.cpp")" "$log"; then
+  if ! grep_path "$repo_root/vendor/soloud/src/c_api/soloud_c.cpp" "$log"; then
     cat "$log"
     echo "Expected play's vendored SoLoud source path in compiler output" >&2
     exit 1
