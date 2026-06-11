@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  vita-examples:
+    name: Vita example cross-compile
+    runs-on: ubuntu-latest
+    container:
+      image: vitasdk/vitasdk:latest
+    env:
+      NIM_VERSION: 2.2.10
+      VITASDK: /usr/local/vitasdk
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          apk add --no-cache ca-certificates curl zip
+          curl -fsSL "https://nim-lang.org/download/nim-${NIM_VERSION}-linux_x64.tar.xz" -o /tmp/nim.tar.xz
+          tar -xJf /tmp/nim.tar.xz -C /opt
+          echo "/opt/nim-${NIM_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Build Vita examples
+        run: scripts/build_vita_examples.sh --out-dir build/vita
+
+      - name: List Vita artifacts
+        run: |
+          find build/vita -maxdepth 1 -type f \( -name '*.vpk' -o -name '*.velf' -o -name '*-eboot.bin' -o -name '*-param.sfo' \) | sort
+          test -s build/vita/phase1_public_api.vpk
+          test -s build/vita/bus_volume_demo.vpk
+          test -s build/vita/music_fades.vpk
+          test -s build/vita/sfx_keypress.vpk
+
+      - name: Upload Vita VPKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: vita-vpks
+          path: build/vita/*.vpk
+          if-no-files-found: error
