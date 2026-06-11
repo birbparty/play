@@ -31,6 +31,9 @@ const
   SOLOUD_LEFT_HANDED_3D* = 4'u32
   SOLOUD_NO_FPU_REGISTER_CHANGE* = 8'u32
 
+when defined(playPlatformVita):
+  const SOLOUD_VITA_HOMEBREW* = 13'u32
+
 proc Soloud_create*(): Soloud {.importc, cdecl.}
 proc Soloud_destroy*(aSoloud: Soloud) {.importc, cdecl.}
 proc Soloud_init*(aSoloud: Soloud): SoloudResult {.importc, cdecl.}
