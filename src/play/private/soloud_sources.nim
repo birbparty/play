@@ -14,6 +14,10 @@ const
   soloudSrc = soloudRoot / "src"
 
 {.passC: "-I" & soloudInclude.}
+
+# Keep backend enablement explicit. This initial host compile model proves the
+# generated C API against headless SoLoud backends only, avoiding desktop audio
+# SDK dependencies until later backend-selection beads opt into them.
 {.passC: "-DWITH_NOSOUND -DWITH_NULL".}
 
 when defined(linux):
@@ -25,8 +29,10 @@ when defined(playPlatform3ds) or defined(playPlatformVita):
 template compileSoloud(path: static string) =
   {.compile: soloudSrc / path.}
 
+# Generated extern-C API boundary.
 compileSoloud "c_api/soloud_c.cpp"
 
+# Core engine implementation.
 compileSoloud "core/soloud.cpp"
 compileSoloud "core/soloud_audiosource.cpp"
 compileSoloud "core/soloud_bus.cpp"
@@ -47,9 +53,11 @@ compileSoloud "core/soloud_misc.cpp"
 compileSoloud "core/soloud_queue.cpp"
 compileSoloud "core/soloud_thread.cpp"
 
+# Headless backends enabled by the WITH_* defines above.
 compileSoloud "backend/nosound/soloud_nosound.cpp"
 compileSoloud "backend/null/soloud_null.cpp"
 
+# Filter wrappers referenced by the generated C API.
 compileSoloud "filter/soloud_bassboostfilter.cpp"
 compileSoloud "filter/soloud_biquadresonantfilter.cpp"
 compileSoloud "filter/soloud_dcremovalfilter.cpp"
@@ -63,6 +71,9 @@ compileSoloud "filter/soloud_lofifilter.cpp"
 compileSoloud "filter/soloud_robotizefilter.cpp"
 compileSoloud "filter/soloud_waveshaperfilter.cpp"
 
+# Audio source wrappers referenced by the generated C API. Keep this explicit
+# and reconcile it with docs/soloud-vendor-audit.md when the vendored snapshot
+# changes; do not replace it with a broad source glob.
 compileSoloud "audiosource/ay/chipplayer.cpp"
 compileSoloud "audiosource/ay/sndbuffer.cpp"
 compileSoloud "audiosource/ay/sndchip.cpp"
@@ -70,6 +81,8 @@ compileSoloud "audiosource/ay/sndrender.cpp"
 compileSoloud "audiosource/ay/soloud_ay.cpp"
 compileSoloud "audiosource/monotone/soloud_monotone.cpp"
 compileSoloud "audiosource/noise/soloud_noise.cpp"
+# OpenMPT is satisfied through SoLoud's dynamic loader shim, not direct
+# libopenmpt linkage.
 compileSoloud "audiosource/openmpt/soloud_openmpt.cpp"
 compileSoloud "audiosource/openmpt/soloud_openmpt_dll.c"
 compileSoloud "audiosource/sfxr/soloud_sfxr.cpp"
