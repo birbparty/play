@@ -17,6 +17,9 @@ proc invalidVoice(): PlayResult =
   failure(invalidHandleError("voice handle is no longer valid"))
 
 proc fadeVolume*(engine: Engine, handle: Handle, target: float32, seconds: float64): PlayResult =
+  if engine == nil:
+    return invalidEngine()
+
   let soloud = engine.rawHandle()
   if soloud == nil:
     return invalidEngine()
@@ -27,6 +30,9 @@ proc fadeVolume*(engine: Engine, handle: Handle, target: float32, seconds: float
   success()
 
 proc fadeInMusic*(engine: Engine, music: Music, seconds: float64, target = 1.0'f32): Handle =
+  if engine == nil:
+    return noHandle
+
   let rawBus = engine.rawBus(musicBus)
   let source = music.audioSource()
   if rawBus == nil or source == nil:

@@ -18,12 +18,18 @@ proc invalidVoice(): PlayResult =
   failure(invalidHandleError("voice handle is no longer valid"))
 
 proc isValid*(engine: Engine, handle: Handle): bool =
+  if engine == nil:
+    return false
+
   let soloud = engine.rawHandle()
   soloud != nil and handle.isValid and
     not engine.wasStoppedVoice(handle.rawVoiceHandle) and
     raw.Soloud_isValidVoiceHandle(soloud, handle.rawVoiceHandle) != 0
 
 proc playSound*(engine: Engine, sound: Sound, bus = defaultSoundBus): Handle =
+  if engine == nil:
+    return noHandle
+
   let rawBus = engine.rawBus(bus)
   let source = sound.audioSource()
   if rawBus == nil or source == nil:
@@ -34,6 +40,9 @@ proc playSound*(engine: Engine, sound: Sound, bus = defaultSoundBus): Handle =
   handleFromRaw(rawHandle)
 
 proc playMusic*(engine: Engine, music: Music): Handle =
+  if engine == nil:
+    return noHandle
+
   let rawBus = engine.rawBus(musicBus)
   let source = music.audioSource()
   if rawBus == nil or source == nil:
@@ -44,6 +53,9 @@ proc playMusic*(engine: Engine, music: Music): Handle =
   handleFromRaw(rawHandle)
 
 proc pause*(engine: Engine, handle: Handle): PlayResult =
+  if engine == nil:
+    return invalidEngine()
+
   let soloud = engine.rawHandle()
   if soloud == nil:
     return invalidEngine()
@@ -54,6 +66,9 @@ proc pause*(engine: Engine, handle: Handle): PlayResult =
   success()
 
 proc resume*(engine: Engine, handle: Handle): PlayResult =
+  if engine == nil:
+    return invalidEngine()
+
   let soloud = engine.rawHandle()
   if soloud == nil:
     return invalidEngine()
@@ -64,6 +79,9 @@ proc resume*(engine: Engine, handle: Handle): PlayResult =
   success()
 
 proc stop*(engine: Engine, handle: Handle): PlayResult =
+  if engine == nil:
+    return invalidEngine()
+
   let soloud = engine.rawHandle()
   if soloud == nil:
     return invalidEngine()
@@ -75,6 +93,9 @@ proc stop*(engine: Engine, handle: Handle): PlayResult =
   success()
 
 proc setLooping*(engine: Engine, handle: Handle, looping: bool): PlayResult =
+  if engine == nil:
+    return invalidEngine()
+
   let soloud = engine.rawHandle()
   if soloud == nil:
     return invalidEngine()
@@ -85,6 +106,9 @@ proc setLooping*(engine: Engine, handle: Handle, looping: bool): PlayResult =
   success()
 
 proc setVolume*(engine: Engine, handle: Handle, volume: float32): PlayResult =
+  if engine == nil:
+    return invalidEngine()
+
   let soloud = engine.rawHandle()
   if soloud == nil:
     return invalidEngine()
