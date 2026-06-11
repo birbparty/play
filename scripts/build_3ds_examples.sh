@@ -12,7 +12,8 @@ Build all examples for Nintendo 3DS with bare `nim c` and nim_3ds.cfg.
 Prerequisites:
   DEVKITPRO must point at a devkitPro install, usually /opt/devkitpro.
   DEVKITARM defaults to $DEVKITPRO/devkitARM.
-  nim, arm-none-eabi-gcc, arm-none-eabi-ar, and 3dsxtool must be in PATH.
+  nim, arm-none-eabi-gcc, arm-none-eabi-g++, arm-none-eabi-ar, and 3dsxtool
+  must be in PATH.
 USAGE
 }
 
@@ -54,6 +55,7 @@ export PATH="$DEVKITPRO/tools/bin:$DEVKITARM/bin:$PATH"
 
 require_cmd nim "Install Nim and ensure it is in PATH."
 require_cmd arm-none-eabi-gcc "Install devkitARM, set DEVKITPRO/DEVKITARM, and ensure the toolchain is in PATH."
+require_cmd arm-none-eabi-g++ "Install devkitARM, set DEVKITPRO/DEVKITARM, and ensure the toolchain is in PATH."
 require_cmd arm-none-eabi-ar "Install devkitARM, set DEVKITPRO/DEVKITARM, and ensure the toolchain is in PATH."
 require_cmd 3dsxtool "Install devkitPro tools and ensure $DEVKITPRO/tools/bin is in PATH."
 
@@ -62,6 +64,9 @@ replace_in_nim_cfg "/opt/devkitpro/devkitARM" "$DEVKITARM"
 replace_in_nim_cfg "/opt/devkitpro/libctru" "$DEVKITPRO/libctru"
 scripts/ensure_3ds_link_stubs.sh
 mkdir -p "$out_dir"
+mkdir -p "$out_dir/sdroot/tests/fixtures"
+rm -rf "$out_dir/sdroot/tests/fixtures/generated"
+cp -R "$repo_root/tests/fixtures/generated" "$out_dir/sdroot/tests/fixtures/generated"
 
 for example in "${examples[@]}"; do
   name="$(example_name "$example")"

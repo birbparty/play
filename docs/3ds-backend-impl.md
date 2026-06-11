@@ -80,10 +80,10 @@ A devkitARM static archive was also built from the SoLoud core closure plus
 `src/backend/ctru_ndsp/soloud_ctru_ndsp.cpp`, producing
 `/tmp/soloud-ctru-build/libsoloud_ctru_ndsp.a`.
 
-The `play` Nim 3DS compile closure is still expected to be verified by the
-example cross-compile bead using `nim_3ds.cfg`; this record covers the
-fork-level backend compile/archive build and host checks for the Nim binding
-surface.
+The `play` Nim 3DS compile closure is verified by the example cross-compile flow
+documented in `docs/3ds-build.md`. That flow copies `nim_3ds.cfg` into place,
+builds each example with `nim c -d:ds3`, and packages the resulting ELF files as
+`.3dsx` artifacts.
 
 After re-vendoring into `play`, the fork tracked-file list was compared against
 `vendor/soloud/`.
