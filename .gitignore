@@ -5,6 +5,8 @@ tests/test_all
 tests/test_all.exe
 tests/test_soloud_compile
 tests/test_soloud_compile.exe
+tests/bindings/test_soloud_raw
+tests/bindings/test_soloud_raw.exe
 tests/results/
 stubs/*.a
 
