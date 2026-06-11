@@ -9,7 +9,8 @@ fork intended for `play` vendoring.
 - Remote: `git@github.com:birbparty/soloud.git`
 - Branch inspected: `feat/3ds-support`
 - Commit inspected: `e82fd32c1f62183922f08c14c814a02b58db1873`
-- Worktree status at audit time: clean against `origin/master`
+- Worktree status at audit time: clean; inspected commit matches local
+  `master` / `origin/master`
 
 Use this commit as the initial audit reference only. The vendoring bead should
 record the exact commit that is copied into `vendor/soloud/`.
@@ -165,6 +166,8 @@ The generated C API exposes the key phase-1 symbols:
 - Fades and scheduling:
   `Soloud_fadeVolume`, `Soloud_fadeGlobalVolume`, `Soloud_schedulePause`,
   `Soloud_scheduleStop`
+- Manual mixing fallback:
+  `Soloud_mixSigned16`
 - Buses:
   `Bus_create`, `Bus_destroy`, `Bus_play`, `Bus_playEx`, `Bus_setVolume`,
   `Bus_stop`
