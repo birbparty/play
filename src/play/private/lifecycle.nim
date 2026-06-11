@@ -2,28 +2,35 @@
 
 import play/backends
 import play/bindings/soloud_raw as raw
+import play/errors
 
 type
   Engine* = ref object
     handle: raw.Soloud
     initialized: bool
 
-  InitError* = object
-    code*: cint
-    message*: string
+proc resetHandle(engine: Engine) =
+  if engine == nil or engine.handle == nil:
+    return
 
-  InitResult* = object
-    ok*: bool
-    error*: InitError
+  raw.Soloud_destroy(engine.handle)
+  engine.handle = nil
+  engine.initialized = false
 
-proc failedInit(engine: Engine, code: cint): InitResult =
+proc failedInit(engine: Engine, options: InitOptions, code: cint): PlayResult =
   var message = "SoLoud init failed"
   if engine != nil and engine.handle != nil:
     let rawMessage = raw.Soloud_getErrorString(engine.handle, code)
     if rawMessage != nil:
       message = $rawMessage
 
-  InitResult(ok: false, error: InitError(code: code, message: message))
+  let kind =
+    if not options.backend.isKnownBackend:
+      unsupportedBackend
+    else:
+      initFailed
+  engine.resetHandle()
+  failure(playError(kind, message, code))
 
 proc ensureHandle(engine: Engine): bool =
   if engine == nil:
@@ -41,15 +48,12 @@ proc newEngine*(): Engine =
 proc isInitialized*(engine: Engine): bool =
   engine != nil and engine.initialized
 
-proc init*(engine: Engine, options = initOptions()): InitResult =
+proc init*(engine: Engine, options = initOptions()): PlayResult =
   if engine == nil or not engine.ensureHandle():
-    return InitResult(
-      ok: false,
-      error: InitError(code: -1, message: "SoLoud engine allocation failed")
-    )
+    return failure(allocationError("SoLoud engine allocation failed"))
 
   if engine.initialized:
-    return InitResult(ok: true)
+    return success()
 
   let args = rawInitArgs(options)
   let code = raw.Soloud_initEx(
@@ -61,10 +65,10 @@ proc init*(engine: Engine, options = initOptions()): InitResult =
     args.channels
   )
   if code != 0:
-    return engine.failedInit(code)
+    return engine.failedInit(options, code)
 
   engine.initialized = true
-  InitResult(ok: true)
+  success()
 
 proc shutdown*(engine: Engine) =
   if engine == nil or engine.handle == nil or not engine.initialized:

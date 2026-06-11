@@ -27,6 +27,7 @@ const
   defaultBackend* = Backend(SOLOUD_AUTO)
   noSoundBackend* = Backend(SOLOUD_NOSOUND)
   nullBackend* = Backend(SOLOUD_NULLDRIVER)
+  backendMax* = Backend(SOLOUD_BACKEND_MAX)
 
 when defined(playPlatformVita):
   const vitaHomebrewBackend* = Backend(SOLOUD_VITA_HOMEBREW)
@@ -42,6 +43,9 @@ proc `==`*(a, b: Backend): bool {.borrow.}
 
 proc rawBackendId*(backend: Backend): cuint =
   cuint(backend)
+
+proc isKnownBackend*(backend: Backend): bool =
+  rawBackendId(backend) < rawBackendId(backendMax)
 
 proc rawInitFlags*(flags: InitFlags): cuint =
   if clipRoundoff in flags:

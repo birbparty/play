@@ -11,10 +11,10 @@ spec "SoLoud lifecycle wrapper":
         bufferSize = 2048'u32,
         channels = 2'u32
       )
-      var firstInit: InitResult
-      var secondInit: InitResult
-      var reinit: InitResult
-      var restored: InitResult
+      var firstInit: PlayResult
+      var secondInit: PlayResult
+      var reinit: PlayResult
+      var restored: PlayResult
       var backend: Backend
     act:
       firstInit = engine.init(options)
@@ -39,7 +39,7 @@ spec "SoLoud lifecycle wrapper":
     given:
       let engine = newEngine()
       let badOptions = initOptions(backend = Backend(9999'u32))
-      var result: InitResult
+      var result: PlayResult
     act:
       result = engine.init(badOptions)
       engine.shutdown()
@@ -47,5 +47,6 @@ spec "SoLoud lifecycle wrapper":
     then:
       result.ok == false
       result.error.code != 0
+      result.error.kind == unsupportedBackend
       result.error.message.len > 0
       engine.isInitialized == false

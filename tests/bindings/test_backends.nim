@@ -5,6 +5,7 @@ static:
   doAssert rawBackendId(defaultBackend) == SOLOUD_AUTO
   doAssert rawBackendId(noSoundBackend) == SOLOUD_NOSOUND
   doAssert rawBackendId(nullBackend) == SOLOUD_NULLDRIVER
+  doAssert rawBackendId(backendMax) == SOLOUD_BACKEND_MAX
 
   when defined(playPlatformVita):
     doAssert rawBackendId(vitaHomebrewBackend) == SOLOUD_VITA_HOMEBREW
@@ -21,6 +22,12 @@ proc checkRawFlags() =
     (SOLOUD_ENABLE_VISUALIZATION or SOLOUD_LEFT_HANDED_3D)
   doAssert rawInitFlags({clipRoundoff, noFpuRegisterChange}) ==
     (SOLOUD_CLIP_ROUNDOFF or SOLOUD_NO_FPU_REGISTER_CHANGE)
+
+proc checkKnownBackends() =
+  doAssert defaultBackend.isKnownBackend
+  doAssert noSoundBackend.isKnownBackend
+  doAssert nullBackend.isKnownBackend
+  doAssert not backendMax.isKnownBackend
 
 proc checkInitOptions() =
   let headless = initOptions(
@@ -46,5 +53,6 @@ proc checkPlatformDefault() =
 
 when isMainModule:
   checkRawFlags()
+  checkKnownBackends()
   checkInitOptions()
   checkPlatformDefault()
