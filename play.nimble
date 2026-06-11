@@ -27,6 +27,7 @@ task test, "Run the play test suite":
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playHasCtruNdspBackend -d:playCtruNdspBackendId=18 tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds -d:playHasCtruNdspBackend -d:playCtruNdspBackendId=18 tests/bindings/test_backends.nim"
+  exec "nim c --path:src -r tests/wrapper/test_lifecycle.nim"
   exec "nim c --path:src -r tests/test_all.nim"
 
 task testTap, "Run the play test suite with TAP output":

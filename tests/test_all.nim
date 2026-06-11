@@ -3,6 +3,9 @@ import std/strutils
 import bddy
 import play
 import common/test_helpers
+{.warning[UnusedImport]: off.}
+import wrapper/lifecycle_spec
+{.warning[UnusedImport]: on.}
 
 spec "play package":
   it "exports package metadata via bddy":
