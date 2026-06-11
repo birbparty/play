@@ -38,6 +38,7 @@ task test, "Run the play test suite":
   exec "nim check --path:src tests/wrapper/assets_api_boundary.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_assets.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_buses.nim"
+  exec "nim c --path:src --path:tests -r tests/api/test_fades.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_handles.nim"
   exec "nim c --path:src -r tests/api/test_lifecycle.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_playback.nim"

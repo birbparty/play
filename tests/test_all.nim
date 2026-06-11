@@ -6,6 +6,7 @@ import common/test_helpers
 {.warning[UnusedImport]: off.}
 import api/assets_spec
 import api/buses_spec
+import api/fades_spec
 import api/handles_spec
 import api/lifecycle_spec
 import api/playback_spec

@@ -6,6 +6,7 @@
 
 import play/assets
 import play/buses
+import play/fades
 import play/handles
 import play/lifecycle
 import play/playback
@@ -13,6 +14,7 @@ import play/types
 
 export assets
 export buses
+export fades
 export handles
 export lifecycle
 export playback
