@@ -21,12 +21,15 @@ requires "https://github.com/mattsp1290/bddy#34287484337fbad6626525062fe27d28fcb
 
 task test, "Run the play test suite":
   # Keep this task as the aggregation point as future beads add bddy binaries.
+  exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -r tests/test_all.nim"
 
 task testTap, "Run the play test suite with TAP output":
+  exec "nim c --path:src tests/test_soloud_compile.nim"
   exec "nim c --path:src -d:bddyTap -r tests/test_all.nim"
 
 task testJunit, "Run the play test suite with JUnit output":
   mkDir "tests/results"
+  exec "nim c --path:src tests/test_soloud_compile.nim"
   # bddyJunit is a strdefine; keep the path in the same quoted compiler argument.
   exec "nim c --path:src \"-d:bddyJunit:tests/results/test_all.xml\" -r tests/test_all.nim"
