@@ -1,88 +1,30 @@
-## Safe voice handle operations.
+## Nim-first public voice handle operations.
 
-import play/bindings/soloud_raw as raw
+import play/private/global_engine
+import play/private/handles as engine_handles
 import play/errors
-import play/private/assets as privateAssets
-import play/private/lifecycle
-import play/private/types
 import play/types
 
-export privateAssets except audioSource
 export types
 
-proc invalidEngine(): PlayResult =
-  failure(invalidHandleError("play engine is not initialized"))
+proc isValid*(handle: Handle): bool =
+  let engine = currentEngine()
+  if engine == nil:
+    return false
 
-proc invalidVoice(): PlayResult =
-  failure(invalidHandleError("voice handle is no longer valid"))
+  engine_handles.isValid(engine, handle)
 
-proc isValid*(engine: Engine, handle: Handle): bool =
-  let soloud = engine.rawHandle()
-  soloud != nil and handle.isValid and
-    raw.Soloud_isValidVoiceHandle(soloud, handle.rawVoiceHandle) != 0
+proc pause*(handle: Handle): PlayResult =
+  engine_handles.pause(currentEngine(), handle)
 
-proc playSound*(engine: Engine, sound: Sound, bus = defaultSoundBus): Handle =
-  let rawBus = engine.rawBus(bus)
-  let source = sound.audioSource()
-  if rawBus == nil or source == nil:
-    return noHandle
+proc resume*(handle: Handle): PlayResult =
+  engine_handles.resume(currentEngine(), handle)
 
-  handleFromRaw(raw.Bus_play(rawBus, source))
+proc stop*(handle: Handle): PlayResult =
+  engine_handles.stop(currentEngine(), handle)
 
-proc playMusic*(engine: Engine, music: Music): Handle =
-  let rawBus = engine.rawBus(musicBus)
-  let source = music.audioSource()
-  if rawBus == nil or source == nil:
-    return noHandle
+proc setLooping*(handle: Handle, looping: bool): PlayResult =
+  engine_handles.setLooping(currentEngine(), handle, looping)
 
-  handleFromRaw(raw.Bus_play(rawBus, source))
-
-proc pause*(engine: Engine, handle: Handle): PlayResult =
-  let soloud = engine.rawHandle()
-  if soloud == nil:
-    return invalidEngine()
-  if not engine.isValid(handle):
-    return invalidVoice()
-
-  raw.Soloud_setPause(soloud, handle.rawVoiceHandle, 1)
-  success()
-
-proc resume*(engine: Engine, handle: Handle): PlayResult =
-  let soloud = engine.rawHandle()
-  if soloud == nil:
-    return invalidEngine()
-  if not engine.isValid(handle):
-    return invalidVoice()
-
-  raw.Soloud_setPause(soloud, handle.rawVoiceHandle, 0)
-  success()
-
-proc stop*(engine: Engine, handle: Handle): PlayResult =
-  let soloud = engine.rawHandle()
-  if soloud == nil:
-    return invalidEngine()
-  if not engine.isValid(handle):
-    return invalidVoice()
-
-  raw.Soloud_stop(soloud, handle.rawVoiceHandle)
-  success()
-
-proc setLooping*(engine: Engine, handle: Handle, looping: bool): PlayResult =
-  let soloud = engine.rawHandle()
-  if soloud == nil:
-    return invalidEngine()
-  if not engine.isValid(handle):
-    return invalidVoice()
-
-  raw.Soloud_setLooping(soloud, handle.rawVoiceHandle, if looping: 1 else: 0)
-  success()
-
-proc setVolume*(engine: Engine, handle: Handle, volume: float32): PlayResult =
-  let soloud = engine.rawHandle()
-  if soloud == nil:
-    return invalidEngine()
-  if not engine.isValid(handle):
-    return invalidVoice()
-
-  raw.Soloud_setVolume(soloud, handle.rawVoiceHandle, cfloat(volume))
-  success()
+proc setVolume*(handle: Handle, volume: float32): PlayResult =
+  engine_handles.setVolume(currentEngine(), handle, volume)

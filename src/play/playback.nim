@@ -1,8 +1,8 @@
 ## Nim-first public playback API.
 
 import play/assets
-import play/handles as engine_handles
 import play/private/global_engine
+import play/private/handles as engine_handles
 import play/types
 
 export types

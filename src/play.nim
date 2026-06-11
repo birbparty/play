@@ -6,12 +6,14 @@
 
 import play/assets
 import play/buses
+import play/handles
 import play/lifecycle
 import play/playback
 import play/types
 
 export assets
 export buses
+export handles
 export lifecycle
 export playback
 export types

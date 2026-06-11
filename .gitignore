@@ -29,6 +29,8 @@ tests/api/test_assets
 tests/api/test_assets.exe
 tests/api/test_buses
 tests/api/test_buses.exe
+tests/api/test_handles
+tests/api/test_handles.exe
 tests/api/test_playback
 tests/api/test_playback.exe
 tests/api/test_types
