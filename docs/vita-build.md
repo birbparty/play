@@ -54,6 +54,8 @@ It currently packages:
 - `examples/bus_volume_demo.nim`
 - `examples/music_fades.nim`
 - `examples/sfx_keypress.nim`
+- `examples/vita_audio_probe.nim` (Vita-only hardware diagnostic; not part of
+  the shared examples list used by the desktop and 3DS builds)
 
 With the default output directory, each example produces:
 

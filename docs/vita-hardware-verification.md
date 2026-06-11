@@ -20,6 +20,7 @@ Set `VITASDK=/path/to/vitasdk` first if VitaSDK is not installed at
 
 Expected package outputs:
 
+- `build/vita/vita_audio_probe.vpk`
 - `build/vita/phase1_public_api.vpk`
 - `build/vita/bus_volume_demo.vpk`
 - `build/vita/music_fades.vpk`
@@ -39,8 +40,39 @@ tests/fixtures/generated/
 - A PS Vita or emulator setup capable of installing/running homebrew VPKs.
 - Vita homebrew permissions sufficient to access packaged files.
 
+## Run The Diagnostic Probe First
+
+Install and launch `vita_audio_probe.vpk` before the other examples. The other
+examples are short headless smoke programs: on hardware they show a black
+screen briefly and exit even when they succeed, so they cannot distinguish
+success from early failure on their own.
+
+The probe paints the screen a distinct solid color per phase, plays five SFX
+beeps with white screen flashes, plays about eight seconds of streamed music,
+and writes a flushed log to `ux0:/data/play-vita-probe.log`:
+
+- dark blue: probe started, engine init in progress
+- dark gray (about 2 s flash): the log file could not be opened; the probe
+  continues without it
+- dark green (brief): engine init succeeded
+- cyan: assets loaded, beep pattern starting
+- white flashes: each SFX beep
+- yellow: streamed music playing
+- bright green (about 10 s final hold): probe finished successfully, then exits
+- red (about 20 s hold): engine init failed
+- magenta (about 20 s hold): asset load failed
+- orange (about 20 s hold): playback returned an invalid handle
+- pink (about 20 s hold): unexpected error; details in the log
+
+Record the colors seen, whether beeps and music were audible, and the contents
+of `ux0:/data/play-vita-probe.log`. A black screen with no color at all means
+the app died before its first frame; check whether the log file was created to
+narrow how far it got.
+
 ## Expected Behavior
 
+- `vita_audio_probe.vpk`: runs the color/beep/log sequence above and exits on
+  its own after the final green hold.
 - `phase1_public_api.vpk`: initializes Play, exercises public volume, sound,
   music, handle, and fade APIs, then exits without an error screen.
 - `bus_volume_demo.vpk`: initializes the SoLoud Vita homebrew backend, plays the

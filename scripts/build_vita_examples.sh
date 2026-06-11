@@ -92,7 +92,11 @@ title_id_for() {
   printf '%s0001\n' "$prefix"
 }
 
-for example in "${examples[@]}"; do
+# The hardware diagnostic probe is Vita-only; the shared examples array stays
+# limited to the cross-platform examples used by the desktop and 3DS builds.
+vita_examples=("${examples[@]}" "examples/vita_audio_probe.nim")
+
+for example in "${vita_examples[@]}"; do
   name="$(example_name "$example")"
   elf="$out_dir/$name"
   velf="$out_dir/$name.velf"

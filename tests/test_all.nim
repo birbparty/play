@@ -11,6 +11,7 @@ import examples/bus_volume_demo_spec
 import examples/example_assets_spec
 import examples/music_fades_spec
 import examples/sfx_keypress_spec
+import examples/vita_audio_probe_spec
 import fixtures/fixtures_spec
 import stress/host_stress_spec
 import stress/realtime_boundary_spec

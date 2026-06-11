@@ -115,6 +115,7 @@ jobs:
             tests/examples/test_example_assets.nim
             tests/examples/test_music_fades.nim
             tests/examples/test_sfx_keypress.nim
+            tests/examples/test_vita_audio_probe.nim
             tests/fixtures/test_fixtures.nim
             tests/stress/test_host_stress.nim
             tests/stress/test_realtime_boundary.nim
@@ -219,6 +220,7 @@ jobs:
           test -s build/vita/bus_volume_demo.vpk
           test -s build/vita/music_fades.vpk
           test -s build/vita/sfx_keypress.vpk
+          test -s build/vita/vita_audio_probe.vpk
 
       - name: Upload Vita VPKs
         uses: actions/upload-artifact@v4
