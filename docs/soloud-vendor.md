@@ -9,7 +9,7 @@
 - Remote: `git@github.com:birbparty/soloud.git`
 - Branch copied: `feat/3ds-support`
 - Commit copied: `412011ec5c950ebf85f717b57722bb9298329686`
-- Copy method: `git -C ~/git/soloud archive --format=tar HEAD | tar -x -C vendor/soloud`
+- Copy method: `git -C ~/git/soloud archive --format=tar 412011ec5c950ebf85f717b57722bb9298329686 | tar -x -C vendor/soloud`
 
 The vendored file count matches the fork's tracked file count at the copied
 commit. The fork's Git metadata is not vendored.
@@ -20,6 +20,10 @@ The post-3DS and post-Vita backend refresh was repeated against fork commit
 `412011ec5c950ebf85f717b57722bb9298329686`. The Vita evaluation did not
 require an additional fork patch, so the tracked-file-only archive copy remained
 byte-for-byte identical to the existing vendored snapshot.
+
+The no-op refresh was verified by replacing `vendor/soloud/` from a
+commit-pinned `git archive`, comparing the fork and vendored tracked file lists,
+and confirming `git status --short -- vendor/soloud` produced no changes.
 
 That commit contains the console backend work currently required by `play`:
 
@@ -34,15 +38,17 @@ For future re-vendors, prefer a tracked-file-only copy so ignored build outputs
 from the fork cannot enter the snapshot. One repeatable approach is:
 
 ```sh
+SOLOUD_COMMIT=412011ec5c950ebf85f717b57722bb9298329686
 rm -rf vendor/soloud
 mkdir -p vendor/soloud
-git -C ~/git/soloud archive --format=tar HEAD | tar -x -C vendor/soloud
+git -C ~/git/soloud archive --format=tar "$SOLOUD_COMMIT" | tar -x -C vendor/soloud
 ```
 
 Verify the copied file set before committing:
 
 ```sh
-git -C ~/git/soloud ls-files | sort > /tmp/soloud-source-files.txt
+SOLOUD_COMMIT=412011ec5c950ebf85f717b57722bb9298329686
+git -C ~/git/soloud ls-tree -r --name-only "$SOLOUD_COMMIT" | sort > /tmp/soloud-source-files.txt
 git ls-files vendor/soloud | sed 's#^vendor/soloud/##' | sort > /tmp/soloud-vendor-files.txt
 comm -23 /tmp/soloud-source-files.txt /tmp/soloud-vendor-files.txt
 comm -13 /tmp/soloud-source-files.txt /tmp/soloud-vendor-files.txt
