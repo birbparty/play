@@ -29,6 +29,8 @@ task test, "Run the play test suite":
   exec "nim check --path:src -d:playPlatform3ds -d:playHasCtruNdspBackend -d:playCtruNdspBackendId=18 tests/bindings/test_backends.nim"
   exec "nim c --path:src -r tests/wrapper/test_lifecycle.nim"
   exec "nim c --path:src -r tests/wrapper/test_errors.nim"
+  exec "nim c --path:src --path:tests -r tests/wrapper/test_assets.nim"
+  exec "nim check --path:src tests/wrapper/assets_api_boundary.nim"
   exec "nim c --path:src -r tests/api/test_lifecycle.nim"
   exec "nim c --path:src --path:tests -r tests/fixtures/test_fixtures.nim"
   exec "nim c --path:src --path:tests -r tests/test_all.nim"
