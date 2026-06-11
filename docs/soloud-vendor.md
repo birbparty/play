@@ -14,6 +14,22 @@
 The vendored file count matches the fork's tracked file count at the copied
 commit. The fork's Git metadata is not vendored.
 
+## Console Backend Refresh
+
+The post-3DS and post-Vita backend refresh was repeated against fork commit
+`412011ec5c950ebf85f717b57722bb9298329686`. The Vita evaluation did not
+require an additional fork patch, so the tracked-file-only archive copy remained
+byte-for-byte identical to the existing vendored snapshot.
+
+That commit contains the console backend work currently required by `play`:
+
+- libctru thread and mutex portability support.
+- The `ctru_ndsp` backend and generated C API backend enum updates.
+- Hardened `ctru_ndsp` shutdown behavior.
+- The existing upstream `vita_homebrew` backend evaluated in
+  `docs/vita-backend-eval.md`, with the follow-up decision recorded in
+  `docs/vita-backend-fixes.md`.
+
 For future re-vendors, prefer a tracked-file-only copy so ignored build outputs
 from the fork cannot enter the snapshot. One repeatable approach is:
 
