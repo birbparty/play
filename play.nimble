@@ -46,6 +46,7 @@ task test, "Run the play test suite":
   exec "nim c --path:src --path:tests -r tests/wrapper/test_buses.nim"
   exec "nim c --path:src --path:tests -r tests/wrapper/test_fades.nim"
   exec "nim c --path:src --path:tests -r tests/wrapper/test_handles.nim"
+  exec "nim c --path:src --path:tests -r tests/wrapper/test_shutdown_stress.nim"
   exec "nim c --path:src --path:tests -r tests/wrapper/test_voice_limits.nim"
   exec "nim check --path:src tests/wrapper/assets_api_boundary.nim"
   exec "nim c --path:src --path:tests -r tests/api/test_assets.nim"
