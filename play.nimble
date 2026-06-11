@@ -60,7 +60,7 @@ task test, "Run the play test suite":
   exec "nim c --path:src --path:tests -r tests/api/test_types.nim"
   exec "nim c --path:src --path:tests -r tests/fixtures/test_fixtures.nim"
   exec "nim c --path:src --path:examples --path:tests -r tests/test_all.nim"
-  exec "nim c --mm:arc --path:src --path:tests -d:bddyTap -r tests/stress/test_host_stress.nim > tests/results/test_host_stress_arc.tap"
+  exec "nim c --mm:arc --path:src --path:tests -r tests/stress/test_host_stress.nim"
   exec "nim c --path:src --path:tests -r tests/stress/test_realtime_boundary.nim"
 
 task testTap, "Run the play test suite with TAP output":
@@ -72,7 +72,7 @@ task testTap, "Run the play test suite with TAP output":
   exec "nim c --path:src -r tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim"
-  exec "nim c --mm:arc --path:src --path:tests \"-d:bddyJunit:tests/results/test_host_stress_arc.xml\" -r tests/stress/test_host_stress.nim"
+  exec "nim c --mm:arc --path:src --path:tests -d:bddyTap -r tests/stress/test_host_stress.nim > tests/results/test_host_stress_arc.tap"
   exec "nim c --path:src --path:examples --path:tests -d:bddyTap -r tests/test_all.nim"
 
 task testJunit, "Run the play test suite with JUnit output":
@@ -84,6 +84,6 @@ task testJunit, "Run the play test suite with JUnit output":
   exec "nim c --path:src -r tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim"
   exec "nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim"
-  exec "nim c --mm:arc --path:src --path:tests -r tests/stress/test_host_stress.nim"
+  exec "nim c --mm:arc --path:src --path:tests \"-d:bddyJunit:tests/results/test_host_stress_arc.xml\" -r tests/stress/test_host_stress.nim"
   # bddyJunit is a strdefine; keep the path in the same quoted compiler argument.
   exec "nim c --path:src --path:examples --path:tests \"-d:bddyJunit:tests/results/test_all.xml\" -r tests/test_all.nim"
