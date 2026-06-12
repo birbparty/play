@@ -85,11 +85,22 @@ narrow how far it got.
 
 ## Hardware Result
 
-Status: pending human verification.
+Status: PASSED on real PS Vita hardware, 2026-06-12.
 
-Record the tested hardware or emulator, command used to build artifacts, which
-VPKs were installed/launched, observed audio/output behavior, and any crash or
-error text.
+- Build: commit `61ab15c`, `scripts/build_vita_examples.sh --out-dir build/vita`,
+  installed from `ux0:/play-vpks` via VitaShell.
+- `vita_audio_probe.vpk`: full success sequence observed — init/assets/beep
+  flashes/music phases and the final bright-green success hold; audio audible.
+  `ux0:/data/play-vita-probe.log` recorded the complete run: backend id 13
+  (Vita homebrew) initialized, cwd `app0:`, both fixture assets resolved and
+  loaded, 5 beeps, 8 s streamed music, clean shutdown at ~24 s with no errors.
+- The four standard example VPKs launch, run, and exit back to LiveArea with
+  no error screen. Their earlier "black screen briefly then exit" reports were
+  fast successful completion (25 ms holds, no UI), not failures — confirmed by
+  the probe exercising the same init/load/play stack visibly and audibly.
+
+Tracked as `play-283` (root cause: observability/test design, resolved by the
+probe) gating `play-2fv`.
 
 ## Follow-Up Failures
 
