@@ -112,6 +112,7 @@ jobs:
             tests/api/test_public_api.nim
             tests/api/test_types.nim
             tests/examples/test_bus_volume_demo.nim
+            tests/examples/test_ds3_audio_probe.nim
             tests/examples/test_example_assets.nim
             tests/examples/test_music_fades.nim
             tests/examples/test_sfx_keypress.nim
@@ -178,6 +179,7 @@ jobs:
           test -s build/3ds/bus_volume_demo.3dsx
           test -s build/3ds/music_fades.3dsx
           test -s build/3ds/sfx_keypress.3dsx
+          test -s build/3ds/ds3_audio_probe.3dsx
           test -s build/3ds/sdroot/tests/fixtures/generated/tone_sfx.wav
           test -s build/3ds/sdroot/tests/fixtures/generated/tone_music.ogg
           test -s build/3ds/sdroot/tests/fixtures/generated/tone_music_long.ogg

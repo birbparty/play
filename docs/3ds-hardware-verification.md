@@ -18,6 +18,7 @@ Use a different `DEVKITPRO` value if devkitPro is installed elsewhere.
 
 Expected build outputs:
 
+- `build/3ds/ds3_audio_probe.3dsx`
 - `build/3ds/phase1_public_api.3dsx`
 - `build/3ds/bus_volume_demo.3dsx`
 - `build/3ds/music_fades.3dsx`
@@ -49,8 +50,37 @@ tests/fixtures/generated/tone_music_long.ogg
 3ds/dspfirm.cdc
 ```
 
+## Run The Diagnostic Probe First
+
+Install and launch `ds3_audio_probe.3dsx` before the other examples. The other
+examples are short headless smoke programs: on hardware they show a black
+screen briefly and exit even when they succeed (confirmed on PS Vita via
+`vita_audio_probe.vpk`), so they cannot distinguish success from early failure
+on their own.
+
+The probe prints live status text to the top screen via the libctru console,
+plays five SFX beeps, plays about eight seconds of streamed music, writes a
+flushed log to `sdmc:/play-3ds-probe.log`, and holds about 10 s on success or
+about 20 s on any failure before exiting (START skips the current hold). The
+final banner is one of:
+
+- `SUCCESS` — full sequence completed
+- `INIT FAILED` — engine/NDSP init failed (usually a missing
+  `sdmc:/3ds/dspfirm.cdc`)
+- `SFX LOAD FAILED` / `MUSIC LOAD FAILED` — fixture files not found; the log
+  lists every candidate path with an existence check
+- `SFX PLAY FAILED` / `MUSIC PLAY FAILED` — playback returned an invalid handle
+- `UNEXPECTED ERROR` — an exception; details in the log
+
+Record the last banner, whether beeps and music were audible, and the contents
+of `sdmc:/play-3ds-probe.log`. A completely blank screen means the app died
+before console init; check whether the log file was created to narrow how far
+it got.
+
 ## Expected Behavior
 
+- `ds3_audio_probe.3dsx`: runs the console/beep/log sequence above and exits
+  on its own after the final hold.
 - `phase1_public_api.3dsx`: initializes Play, exercises public volume, sound,
   music, handle, and fade APIs, then exits without an error screen.
 - `bus_volume_demo.3dsx`: initializes the 3DS `ctru_ndsp` backend, plays the

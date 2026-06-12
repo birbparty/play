@@ -8,6 +8,7 @@ import api/playback_spec
 import api/public_api_spec
 import api/types_spec
 import examples/bus_volume_demo_spec
+import examples/ds3_audio_probe_spec
 import examples/example_assets_spec
 import examples/music_fades_spec
 import examples/sfx_keypress_spec

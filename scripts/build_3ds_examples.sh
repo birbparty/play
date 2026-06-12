@@ -68,7 +68,11 @@ mkdir -p "$out_dir/sdroot/tests/fixtures"
 rm -rf "$out_dir/sdroot/tests/fixtures/generated"
 cp -R "$repo_root/tests/fixtures/generated" "$out_dir/sdroot/tests/fixtures/generated"
 
-for example in "${examples[@]}"; do
+# The hardware diagnostic probe is 3DS-only; the shared examples array stays
+# limited to the cross-platform examples used by the desktop and Vita builds.
+ds3_examples=("${examples[@]}" "examples/ds3_audio_probe.nim")
+
+for example in "${ds3_examples[@]}"; do
   name="$(example_name "$example")"
   elf="$out_dir/$name.elf"
   three_dsx="$out_dir/$name.3dsx"
