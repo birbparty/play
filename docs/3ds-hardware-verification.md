@@ -46,6 +46,7 @@ The SD card should contain:
 ```text
 tests/fixtures/generated/tone_sfx.wav
 tests/fixtures/generated/tone_music.ogg
+tests/fixtures/generated/tone_music.wav
 tests/fixtures/generated/tone_music_long.ogg
 3ds/dspfirm.cdc
 ```
@@ -59,23 +60,39 @@ screen briefly and exit even when they succeed (confirmed on PS Vita via
 on their own.
 
 The probe prints live status text to the top screen via the libctru console,
-plays five SFX beeps, plays about eight seconds of streamed music, writes a
+plays five SFX beeps, then plays a four-phase music matrix of about five
+seconds per phase with a one-second silence gap between phases, writes a
 flushed log to `sdmc:/play-3ds-probe.log`, and holds about 10 s on success or
-about 20 s on any failure before exiting (START skips the current hold). The
-final banner is one of:
+about 20 s on any failure before exiting (START skips the current hold).
+
+The music matrix phases vary decode location, file I/O, and bus, so reporting
+which phases were audible attributes a silent-music failure to the right
+layer:
+
+- `MUSIC A: STREAMED OGG` — vorbis decode and file reads in the mixer thread,
+  music bus
+- `MUSIC B: STREAMED WAV` — file reads in the mixer thread, no vorbis,
+  music bus
+- `MUSIC C: PRELOADED OGG, SFX BUS` — vorbis decoded at load on the main
+  thread
+- `MUSIC D: PRELOADED OGG, MUSIC BUS` — same source as C, isolates the bus
+
+The final banner is one of:
 
 - `SUCCESS` — full sequence completed
+- `PARTIAL - SOME MUSIC PHASES FAILED` — a matrix phase failed to load or
+  play; per-phase details in the log
 - `INIT FAILED` — engine/NDSP init failed (usually a missing
   `sdmc:/3ds/dspfirm.cdc`)
 - `SFX LOAD FAILED` / `MUSIC LOAD FAILED` — fixture files not found; the log
   lists every candidate path with an existence check
-- `SFX PLAY FAILED` / `MUSIC PLAY FAILED` — playback returned an invalid handle
+- `SFX PLAY FAILED` — beep playback returned an invalid handle
 - `UNEXPECTED ERROR` — an exception; details in the log
 
-Record the last banner, whether beeps and music were audible, and the contents
-of `sdmc:/play-3ds-probe.log`. A completely blank screen means the app died
-before console init; check whether the log file was created to narrow how far
-it got.
+Record the last banner, **which of phases A/B/C/D were audible**, and the
+contents of `sdmc:/play-3ds-probe.log`. A completely blank screen means the
+app died before console init; check whether the log file was created to
+narrow how far it got.
 
 ## Expected Behavior
 

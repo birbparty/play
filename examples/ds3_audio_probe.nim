@@ -7,7 +7,10 @@
 ##
 ## - prints live status text to the top screen via the libctru console,
 ## - writes a flushed line-by-line log to `sdmc:/play-3ds-probe.log`,
-## - plays a repeated SFX beep pattern and several seconds of streamed music,
+## - plays a repeated SFX beep pattern, then a four-phase music matrix
+##   (A: streamed OGG, B: streamed WAV, C: preloaded OGG on the sfx bus,
+##   D: preloaded OGG on the music bus) so a silent-music failure can be
+##   attributed to the decoding/IO/bus layer by which phases are audible,
 ## - holds the screen long enough to read the final state before exiting
 ##   (START skips the current hold early).
 ##
@@ -26,6 +29,10 @@ import play
 import common/assets
 
 when defined(playPlatform3ds):
+  # The main thread fully decodes an OGG at load time in the preloaded music
+  # phases; libctru's default 32 KiB main stack is too tight for stb_vorbis.
+  {.emit: "unsigned int __stacksize__ = 256 * 1024;".}
+
   const
     gfxTopScreen = 0'i32 # gfxScreen_t GFX_TOP
     keyStart = 0x8'u32   # KEY_START (BIT(3))
@@ -100,7 +107,10 @@ type
     sfxLoaded*: bool
     musicLoaded*: bool
     sfxPlayed*: bool
-    musicPlayed*: bool
+    musicPlayed*: bool          # phase A: streamed OGG on music bus
+    musicStreamedWavPlayed*: bool # phase B: streamed WAV on music bus
+    musicPreloadedOggPlayed*: bool # phase C: preloaded OGG on sfx bus
+    preloadedOggMusicBusPlayed*: bool # phase D: preloaded OGG on music bus
     failure*: string
 
   ProbeContext = object
@@ -119,7 +129,7 @@ proc defaultProbeConfig*(): ProbeConfig =
       beepCount: 5,
       beepMs: 250,
       beepGapMs: 750,
-      musicMs: 8000,
+      musicMs: 5000,
       successHoldMs: 10000,
       failureHoldMs: 20000,
       verbose: true
@@ -240,6 +250,8 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
   var
     sfx = SoundResult()
     music = MusicResult()
+    musicWav = MusicResult()
+    oggSound = SoundResult()
     sfxHandle = noHandle
     musicHandle = noHandle
 
@@ -298,31 +310,118 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
       if ctx.aborted:
         break
 
+    # Music matrix: four phases that vary decode location, file I/O, and bus,
+    # so a hardware tester reporting which phases were audible attributes a
+    # silent-music failure to the right layer (play-pm2).
+    #   A: streamed OGG, music bus  - vorbis decode + file reads, mixer thread
+    #   B: streamed WAV, music bus  - file reads in mixer thread, no vorbis
+    #   C: preloaded OGG, sfx bus   - vorbis decoded at load, main thread
+    #   D: preloaded OGG, music bus - same source as C, isolates the bus
+    # A 1 s silence gap follows each phase so the phases are separable by ear
+    # (the fixtures sound identical across phases).
+    template phaseGap() =
+      if config.musicMs > 0:
+        ctx.log("phase gap (silence)")
+        ctx.pause(1000)
+
     if not ctx.aborted:
-      ctx.banner("MUSIC STARTING")
-      ctx.log("starting streamed music for " & $config.musicMs & "ms")
+      ctx.banner("MUSIC A: STREAMED OGG - " & $config.musicMs & "ms")
       musicHandle = playMusic(music.music)
       if not musicHandle.isValid:
-        ctx.fail(result, "MUSIC PLAY FAILED",
-          "music play returned invalid handle")
-        return
-      result.musicPlayed = true
-      discard setLooping(musicHandle, true)
-      discard setVolume(musicHandle, 0.8'f32)
-      ctx.pause(config.musicMs)
-      discard stop(musicHandle)
-      musicHandle = noHandle
+        ctx.log("FAIL: phase A play returned invalid handle")
+      else:
+        result.musicPlayed = true
+        discard setLooping(musicHandle, true)
+        discard setVolume(musicHandle, 0.8'f32)
+        ctx.pause(config.musicMs)
+        discard stop(musicHandle)
+        musicHandle = noHandle
+      phaseGap()
+
+    if not ctx.aborted:
+      let wavMusicPath = changeFileExt(musicPath, "wav")
+      ctx.banner("MUSIC B: STREAMED WAV - " & $config.musicMs & "ms")
+      ctx.log("phase B path: " & wavMusicPath)
+      var wavExists = false
+      try:
+        wavExists = fileExists(wavMusicPath)
+      except CatchableError:
+        discard
+      if not wavExists:
+        ctx.log("FAIL: phase B wav file missing: " & wavMusicPath)
+      else:
+        musicWav = loadMusic(wavMusicPath)
+        if not musicWav.ok:
+          ctx.log("FAIL: phase B load failed: " & musicWav.error.message)
+        else:
+          musicHandle = playMusic(musicWav.music)
+          if not musicHandle.isValid:
+            ctx.log("FAIL: phase B play returned invalid handle")
+          else:
+            result.musicStreamedWavPlayed = true
+            discard setLooping(musicHandle, true)
+            discard setVolume(musicHandle, 0.8'f32)
+            ctx.pause(config.musicMs)
+            discard stop(musicHandle)
+            musicHandle = noHandle
+      phaseGap()
+
+    if not ctx.aborted:
+      ctx.banner("MUSIC C: PRELOADED OGG, SFX BUS - " & $config.musicMs & "ms")
+      oggSound = loadSound(musicPath)
+      if not oggSound.ok:
+        ctx.log("FAIL: phase C load failed: " & oggSound.error.message)
+      else:
+        sfxHandle = play(oggSound.sound, sfxBus)
+        if not sfxHandle.isValid:
+          ctx.log("FAIL: phase C play returned invalid handle")
+        else:
+          result.musicPreloadedOggPlayed = true
+          discard setLooping(sfxHandle, true)
+          discard setVolume(sfxHandle, 0.8'f32)
+          ctx.pause(config.musicMs)
+          discard stop(sfxHandle)
+          sfxHandle = noHandle
+      phaseGap()
+
+    if not ctx.aborted:
+      ctx.banner("MUSIC D: PRELOADED OGG, MUSIC BUS - " &
+        $config.musicMs & "ms")
+      if not oggSound.ok:
+        ctx.log("FAIL: phase D skipped, phase C load failed")
+      else:
+        musicHandle = play(oggSound.sound, musicBus)
+        if not musicHandle.isValid:
+          ctx.log("FAIL: phase D play returned invalid handle")
+        else:
+          result.preloadedOggMusicBusPlayed = true
+          discard setLooping(musicHandle, true)
+          discard setVolume(musicHandle, 0.8'f32)
+          ctx.pause(config.musicMs)
+          discard stop(musicHandle)
+          musicHandle = noHandle
 
     if ctx.aborted:
       result.failure = "aborted by user (HOME menu close)"
       ctx.log("ABORTED BY USER - probe did not run to completion")
       return
 
-    result.ok = true
-    ctx.log("probe finished successfully")
-    ctx.banner("SUCCESS - holding " & $config.successHoldMs &
-      "ms, press START to exit")
-    discard probeHold(config.successHoldMs)
+    ctx.log("music matrix: A streamedOgg=" & $result.musicPlayed &
+      " B streamedWav=" & $result.musicStreamedWavPlayed &
+      " C preloadedOggSfxBus=" & $result.musicPreloadedOggPlayed &
+      " D preloadedOggMusicBus=" & $result.preloadedOggMusicBusPlayed)
+
+    result.ok = result.sfxPlayed and result.musicPlayed and
+      result.musicStreamedWavPlayed and result.musicPreloadedOggPlayed and
+      result.preloadedOggMusicBusPlayed
+    if result.ok:
+      ctx.log("probe finished successfully")
+      ctx.banner("SUCCESS - holding " & $config.successHoldMs &
+        "ms, press START to exit")
+      discard probeHold(config.successHoldMs)
+    else:
+      ctx.fail(result, "PARTIAL - SOME MUSIC PHASES FAILED",
+        "music matrix incomplete; see log for per-phase failures")
   except CatchableError as exc:
     result.ok = false
     ctx.fail(result, "UNEXPECTED ERROR", "unexpected exception: " & exc.msg)
@@ -335,6 +434,10 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
       sfx.sound.dispose()
     if music.ok:
       music.music.dispose()
+    if musicWav.ok:
+      musicWav.music.dispose()
+    if oggSound.ok:
+      oggSound.sound.dispose()
     shutdown()
     ctx.log("shutdown complete, exiting")
     if ctx.logOpen:

@@ -193,7 +193,11 @@ namespace SoLoud
 			d->mParam = aParameter;
 
 			ThreadHandleData *threadHandle = new ThreadHandleData;
-			threadHandle->thread = threadCreate(threadfunc, d, 32 * 1024, 0x30, -2, false);
+			// Raised from this port's original 32 KiB: the NDSP mixer thread
+			// runs stb_vorbis decode and SD-card file I/O for streamed
+			// sources, which needs more stack headroom; the Vita backend
+			// uses 64 KiB.
+			threadHandle->thread = threadCreate(threadfunc, d, 128 * 1024, 0x30, -2, false);
 			if (0 == threadHandle->thread)
 			{
 				delete d;

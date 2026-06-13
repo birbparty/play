@@ -17,6 +17,9 @@ spec "3ds audio probe example":
       result.musicLoaded == true
       result.sfxPlayed == true
       result.musicPlayed == true
+      result.musicStreamedWavPlayed == true
+      result.musicPreloadedOggPlayed == true
+      result.preloadedOggMusicBusPlayed == true
       result.failure == ""
 
   it "reports a failure state when init cannot succeed":
