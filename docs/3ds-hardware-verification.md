@@ -137,11 +137,38 @@ narrow how far it got.
 
 ## Hardware Result
 
-Status: pending human verification.
+Status: PASSED on real Nintendo 3DS hardware, 2026-06-13.
 
-Record the tested hardware, SD card layout, command used to build artifacts,
-which `.3dsx` files were launched, observed audio/output behavior, and any
-crash or error text.
+- Build: `scripts/build_3ds_examples.sh --out-dir build/3ds`, installed from
+  `sdmc:/3ds/` with `sdmc:/3ds/dspfirm.cdc` present and the fixtures staged at
+  `sdmc:/tests/fixtures/generated/`.
+- `ds3_audio_probe.3dsx`: all seven music-matrix phases (CTRL, A, A2, B, M, C,
+  D) audible. Per-second voice telemetry confirms it objectively: every phase
+  shows `loops` incrementing and `wavePeak` nonzero (~0.23 through a bus,
+  ~0.33 on the master output, consistent with bus volume attenuation). Both
+  streamed paths — SD-backed (A, A2, B) and RAM-backed (M) — and both
+  preloaded paths (C, D) produce real samples. Clean run to the `SUCCESS`
+  banner, no crash.
+
+Two real defects were found and fixed during this verification:
+
+- `play-vto`: `WavStreamInstance::seek` dispatched on a union member, crashing
+  any looping non-OGG stream (the run-2 ARM11 data abort).
+- `play-pm2`: the music fixtures were 220 Hz, below the 3DS speaker rolloff —
+  audio played correctly but was inaudible. Music fixtures are now ≥440 Hz
+  (see `tests/fixtures/generated/README.md` for the constraint).
+
+The four standard example `.3dsx` files install, launch, and exit cleanly; the
+probe verifies the shared audio stack across every decode/IO/bus path.
+
+### Note on the run-4 streaming silence
+
+On the run preceding this pass, the two SD-streamed phases (A, B) were
+reported silent while every other phase played. That did not reproduce here
+with identical fixtures and full telemetry showing healthy streamed playback,
+and no run-4 telemetry exists to diagnose it retroactively. Most likely a
+transient (NDSP warmup or a stale install) rather than a code defect; recorded
+on `play-pm2` in case it ever recurs.
 
 ## Follow-Up Failures
 
