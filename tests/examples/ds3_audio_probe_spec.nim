@@ -16,6 +16,7 @@ spec "3ds audio probe example":
       result.sfxLoaded == true
       result.musicLoaded == true
       result.sfxPlayed == true
+      result.controlSfxMusicBusPlayed == true
       result.musicPlayed == true
       result.musicStreamedWavPlayed == true
       result.musicPreloadedOggPlayed == true

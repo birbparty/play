@@ -7,10 +7,11 @@
 ##
 ## - prints live status text to the top screen via the libctru console,
 ## - writes a flushed line-by-line log to `sdmc:/play-3ds-probe.log`,
-## - plays a repeated SFX beep pattern, then a four-phase music matrix
-##   (A: streamed OGG, B: streamed WAV, C: preloaded OGG on the sfx bus,
-##   D: preloaded OGG on the music bus) so a silent-music failure can be
-##   attributed to the decoding/IO/bus layer by which phases are audible,
+## - plays a repeated SFX beep pattern, then a music matrix: a control phase
+##   (the known-audible sfx tone looped on the music bus) followed by
+##   A: streamed OGG, B: streamed WAV, C: preloaded OGG on the sfx bus,
+##   D: preloaded OGG on the music bus - so a silent-music failure can be
+##   attributed to content vs decoding/IO/bus by which phases are audible,
 ## - holds the screen long enough to read the final state before exiting
 ##   (START skips the current hold early).
 ##
@@ -205,6 +206,7 @@ type
     sfxLoaded*: bool
     musicLoaded*: bool
     sfxPlayed*: bool
+    controlSfxMusicBusPlayed*: bool # control: known-audible sfx tone, looped
     musicPlayed*: bool          # phase A: streamed OGG on music bus
     musicStreamedWavPlayed*: bool # phase B: streamed WAV on music bus
     musicPreloadedOggPlayed*: bool # phase C: preloaded OGG on sfx bus
@@ -440,6 +442,25 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
         ctx.log("phase gap (silence)")
         ctx.pause(1000)
 
+    # Control phase: the same sfx tone that is audibly working in the beep
+    # pattern, but configured exactly like the music phases (looping, volume
+    # 0.8, music bus). If this is audible and a music phase is not, the
+    # difference is the music content itself, not looping/volume/bus.
+    if not ctx.aborted:
+      ctx.banner("MUSIC CTRL: LOOPED SFX TONE, MUSIC BUS - " &
+        $config.musicMs & "ms")
+      musicHandle = play(sfx.sound, musicBus)
+      if not musicHandle.isValid:
+        ctx.log("FAIL: control phase play returned invalid handle")
+      else:
+        result.controlSfxMusicBusPlayed = true
+        discard setLooping(musicHandle, true)
+        discard setVolume(musicHandle, 0.8'f32)
+        ctx.pause(config.musicMs)
+        discard stop(musicHandle)
+        musicHandle = noHandle
+      phaseGap()
+
     if not ctx.aborted:
       ctx.banner("MUSIC A: STREAMED OGG - " & $config.musicMs & "ms")
       musicHandle = playMusic(music.music)
@@ -522,14 +543,16 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
       ctx.log("ABORTED BY USER - probe did not run to completion")
       return
 
-    ctx.log("music matrix: A streamedOgg=" & $result.musicPlayed &
+    ctx.log("music matrix: CTRL loopedSfxMusicBus=" &
+      $result.controlSfxMusicBusPlayed &
+      " A streamedOgg=" & $result.musicPlayed &
       " B streamedWav=" & $result.musicStreamedWavPlayed &
       " C preloadedOggSfxBus=" & $result.musicPreloadedOggPlayed &
       " D preloadedOggMusicBus=" & $result.preloadedOggMusicBusPlayed)
 
-    result.ok = result.sfxPlayed and result.musicPlayed and
-      result.musicStreamedWavPlayed and result.musicPreloadedOggPlayed and
-      result.preloadedOggMusicBusPlayed
+    result.ok = result.sfxPlayed and result.controlSfxMusicBusPlayed and
+      result.musicPlayed and result.musicStreamedWavPlayed and
+      result.musicPreloadedOggPlayed and result.preloadedOggMusicBusPlayed
     if result.ok:
       ctx.log("probe finished successfully")
       ctx.banner("SUCCESS - holding " & $config.successHoldMs &

@@ -65,10 +65,13 @@ seconds per phase with a one-second silence gap between phases, writes a
 flushed log to `sdmc:/play-3ds-probe.log`, and holds about 10 s on success or
 about 20 s on any failure before exiting (START skips the current hold).
 
-The music matrix phases vary decode location, file I/O, and bus, so reporting
-which phases were audible attributes a silent-music failure to the right
-layer:
+The music matrix phases vary content, decode location, file I/O, and bus, so
+reporting which phases were audible attributes a silent-music failure to the
+right layer:
 
+- `MUSIC CTRL: LOOPED SFX TONE, MUSIC BUS` — the same 880 Hz tone as the
+  beeps, configured exactly like the music phases (looping, volume 0.8,
+  music bus); isolates content from looping/volume/bus
 - `MUSIC A: STREAMED OGG` — vorbis decode and file reads in the mixer thread,
   music bus
 - `MUSIC B: STREAMED WAV` — file reads in the mixer thread, no vorbis,
@@ -76,6 +79,15 @@ layer:
 - `MUSIC C: PRELOADED OGG, SFX BUS` — vorbis decoded at load on the main
   thread
 - `MUSIC D: PRELOADED OGG, MUSIC BUS` — same source as C, isolates the bus
+
+What to listen for: the beeps and the control phase are a high tone (880 Hz);
+phases A through D are a continuous lower tone (440 Hz, one octave down). The
+music fixtures were originally 220 Hz, which plays correctly but is below the
+3DS speakers' rolloff and inaudible — when re-running after a fixture change,
+re-copy `build/3ds/sdroot/` to the SD card root, or stale fixture files at
+`sdmc:/tests/fixtures/generated/` (or `sdmc:/examples/assets/`, which the
+probe prefers when present) will silently reintroduce old content; the
+probe's `asset selected:` log line records which file was actually used.
 
 The final banner is one of:
 
