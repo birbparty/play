@@ -128,6 +128,7 @@ jobs:
             tests/wrapper/test_handles.nim
             tests/wrapper/test_lifecycle.nim
             tests/wrapper/test_shutdown_stress.nim
+            tests/wrapper/test_stream_loop.nim
             tests/wrapper/test_voice_limits.nim
           )
 

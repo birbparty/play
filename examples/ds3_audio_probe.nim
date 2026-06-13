@@ -39,6 +39,26 @@ when defined(playPlatform3ds):
 
   proc gfxInitDefault() {.importc, header: "<3ds.h>".}
   proc gfxExit() {.importc, header: "<3ds.h>".}
+  proc threadCreate(
+    entry: proc (arg: pointer) {.cdecl.}, arg: pointer, stackSize: csize_t,
+    prio: cint, coreId: cint, detached: bool
+  ): pointer {.importc: "threadCreate", header: "<3ds.h>".}
+  proc threadJoin(
+    thread: pointer, timeoutNs: uint64
+  ): cint {.importc: "threadJoin", header: "<3ds.h>".}
+  proc threadFree(thread: pointer) {.importc: "threadFree", header: "<3ds.h>".}
+  proc cFopen(
+    path, mode: cstring
+  ): pointer {.importc: "fopen", header: "<stdio.h>".}
+  proc cFread(
+    dst: pointer, size, count: csize_t, file: pointer
+  ): csize_t {.importc: "fread", header: "<stdio.h>".}
+  proc cFclose(
+    file: pointer
+  ): cint {.importc: "fclose", header: "<stdio.h>".}
+  proc cFseek(
+    file: pointer, offset: clong, whence: cint
+  ): cint {.importc: "fseek", header: "<stdio.h>".}
   proc consoleInit(
     screen: cint, console: pointer
   ): pointer {.importc, header: "<3ds.h>".}
@@ -51,6 +71,41 @@ when defined(playPlatform3ds):
 
   var consoleReady = false
 
+  # Thread read check (phase E): the SoLoud mixer thread streams file data on
+  # a libctru thread, and silent streamed playback would be explained by file
+  # reads failing off the main thread. The worker only touches C FFI and
+  # plain globals - no Nim strings/seqs, which need runtime state this
+  # foreign thread does not have.
+  var
+    threadReadPath: array[512, char]
+    threadMainFile: pointer = nil
+    threadReadMainBytes: int = -1
+    threadReadOwnBytes: int = -1
+    threadSeekReadBytes: int = -1
+    threadFirstBytes: array[4, byte]
+
+  proc threadReadWorker(arg: pointer) {.cdecl.} =
+    var buf: array[4096, byte]
+    if threadMainFile != nil:
+      threadReadMainBytes =
+        int(cFread(addr buf[0], 1, csize_t(buf.len), threadMainFile))
+      if threadReadMainBytes >= 4:
+        for i in 0 .. 3:
+          threadFirstBytes[i] = buf[i]
+    let own = cFopen(cast[cstring](addr threadReadPath[0]), "rb")
+    if own == nil:
+      threadReadOwnBytes = -2
+    else:
+      threadReadOwnBytes =
+        int(cFread(addr buf[0], 1, csize_t(buf.len), own))
+      # Streaming decoders seek constantly; model a mid-file seek-then-read.
+      if cFseek(own, 1000, 0) == 0:
+        threadSeekReadBytes =
+          int(cFread(addr buf[0], 1, csize_t(buf.len), own))
+      else:
+        threadSeekReadBytes = -3
+      discard cFclose(own)
+
   proc probeDisplayInit(): bool =
     if not consoleReady:
       gfxInitDefault()
@@ -62,6 +117,43 @@ when defined(playPlatform3ds):
     if consoleReady:
       gfxExit()
       consoleReady = false
+
+  proc probeThreadReadCheck(
+    path: string
+  ): tuple[attempted, spawned: bool, mainBytes, ownBytes, seekBytes: int,
+      magic: array[4, byte]] =
+    ## Reads the file from a worker thread created like the SoLoud mixer
+    ## thread (same priority/core), both through a FILE opened on the main
+    ## thread and through one the worker opens itself, plus a mid-file
+    ## seek-then-read. Returns the first four bytes read so garbage reads
+    ## are distinguishable from real data.
+    result = (true, false, -1, -1, -1, default(array[4, byte]))
+    if path.len >= threadReadPath.len:
+      return
+    for i in 0 ..< threadReadPath.len:
+      threadReadPath[i] = '\0'
+    for i, c in path:
+      threadReadPath[i] = c
+    threadReadMainBytes = -1
+    threadReadOwnBytes = -1
+    threadSeekReadBytes = -1
+    threadFirstBytes = default(array[4, byte])
+    threadMainFile = cFopen(path.cstring, "rb")
+    let worker = threadCreate(
+      threadReadWorker, nil, csize_t(131072), 0x30, -2, false
+    )
+    if worker == nil:
+      if threadMainFile != nil:
+        discard cFclose(threadMainFile)
+        threadMainFile = nil
+      return
+    discard threadJoin(worker, high(uint64))
+    threadFree(worker)
+    if threadMainFile != nil:
+      discard cFclose(threadMainFile)
+      threadMainFile = nil
+    result = (true, true, threadReadMainBytes, threadReadOwnBytes,
+      threadSeekReadBytes, threadFirstBytes)
 
   proc probeHold(durationMs: int): bool =
     ## Pumps frames at ~60 Hz so the app stays responsive while holding.
@@ -82,6 +174,12 @@ when defined(playPlatform3ds):
 else:
   proc probeDisplayInit(): bool = false
   proc probeDisplayShutdown() = discard
+  proc probeThreadReadCheck(
+    path: string
+  ): tuple[attempted, spawned: bool, mainBytes, ownBytes, seekBytes: int,
+      magic: array[4, byte]] =
+    discard path
+    (false, false, -1, -1, -1, default(array[4, byte]))
   proc probeHold(durationMs: int): bool =
     if durationMs > 0:
       sleep(durationMs)
@@ -275,6 +373,24 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
 
     let sfxPath = ctx.resolveProbeAsset(clickSfx)
     let musicPath = ctx.resolveProbeAsset(themeMusic)
+
+    ctx.log("thread read check: starting worker")
+    let threadRead = probeThreadReadCheck(musicPath)
+    if not threadRead.attempted:
+      ctx.log("thread read check: not available on this platform")
+    elif not threadRead.spawned:
+      ctx.log("thread read check: worker spawn failed")
+    else:
+      var magic = ""
+      for b in threadRead.magic:
+        if b >= 32'u8 and b <= 126'u8:
+          magic.add(char(b))
+        else:
+          magic.add('.')
+      ctx.log("thread read check (4096 requested): mainOpenedFile=" &
+        $threadRead.mainBytes & " ownOpenedFile=" & $threadRead.ownBytes &
+        " seekThenRead=" & $threadRead.seekBytes &
+        " firstBytes=\"" & magic & "\"")
 
     sfx = loadSound(sfxPath)
     if not sfx.ok:

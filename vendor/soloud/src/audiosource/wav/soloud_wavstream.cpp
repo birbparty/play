@@ -97,9 +97,16 @@ namespace SoLoud
 		else
 		if (aParent->mFilename)
 		{
+			// Altered from upstream: check the open result. DiskFile::read
+			// does not guard a null handle, so an unchecked failed open
+			// turns into fread(..., NULL) at codec init.
 			DiskFile *df = new DiskFile;
+			if (df->open(aParent->mFilename) != SO_NO_ERROR)
+			{
+				delete df;
+				return;
+			}
 			mFile = df;
-			df->open(aParent->mFilename);
 		}
 		else
 		if (aParent->mStreamFile)
@@ -341,7 +348,12 @@ namespace SoLoud
 
 	result WavStreamInstance::seek(double aSeconds, float* mScratch, unsigned int mScratchSize)
 	{
-		if (mCodec.mOgg)
+		// Altered from upstream: dispatch on the parent's file type, not on
+		// mCodec.mOgg. mCodec is a union, so mOgg aliases the dr* codec
+		// pointers and every non-OGG stream otherwise enters the vorbis path
+		// with a non-vorbis pointer (observed as a data abort in
+		// stb_vorbis_seek when a looping streamed WAV wraps on 3DS).
+		if (mParent->mFiletype == WAVSTREAM_OGG && mCodec.mOgg)
 		{
 			int pos = (int)floor(mBaseSamplerate * aSeconds);
 			stb_vorbis_seek(mCodec.mOgg, pos);

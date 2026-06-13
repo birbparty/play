@@ -71,3 +71,9 @@ stubs/*.a
 .dolt/
 *.db
 .beads-credential-key
+tests/examples/test_vita_audio_probe
+tests/examples/test_vita_audio_probe.exe
+tests/examples/test_ds3_audio_probe
+tests/examples/test_ds3_audio_probe.exe
+tests/wrapper/test_stream_loop
+tests/wrapper/test_stream_loop.exe

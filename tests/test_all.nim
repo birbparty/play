@@ -23,6 +23,7 @@ import wrapper/fades_spec
 import wrapper/handles_spec
 import wrapper/lifecycle_spec
 import wrapper/shutdown_stress_spec
+import wrapper/stream_loop_spec
 import wrapper/voice_limits_spec
 import test_package_metadata
 {.warning[UnusedImport]: on.}
