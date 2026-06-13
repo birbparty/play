@@ -74,8 +74,13 @@ right layer:
   music bus); isolates content from looping/volume/bus
 - `MUSIC A: STREAMED OGG` — vorbis decode and file reads in the mixer thread,
   music bus
+- `MUSIC A2: STREAMED OGG FROM SD, MASTER OUT` — the same SD-backed stream as
+  A played directly on the master output, isolating the bus from the file
+  backing
 - `MUSIC B: STREAMED WAV` — file reads in the mixer thread, no vorbis,
   music bus
+- `MUSIC M: STREAMED OGG FROM MEMORY` — same streaming decode path as A but
+  reading from RAM, no SD card I/O during mixing
 - `MUSIC C: PRELOADED OGG, SFX BUS` — vorbis decoded at load on the main
   thread
 - `MUSIC D: PRELOADED OGG, MUSIC BUS` — same source as C, isolates the bus
@@ -101,7 +106,17 @@ The final banner is one of:
 - `SFX PLAY FAILED` — beep playback returned an invalid handle
 - `UNEXPECTED ERROR` — an exception; details in the log
 
-Record the last banner, **which of phases A/B/C/D were audible**, and the
+During each phase the log records per-second voice telemetry: voice liveness,
+stream time (wall-clock-driven — only a frozen value is informative), loop
+count (increments only when the decoder genuinely finishes a pass over the
+stream, so it is the real "decoder is consuming data" signal), and the mixed
+wave peak (zero means the phase contributed silence to the final mix; nonzero
+during a silent phase means audio was mixed but not heard). Telemetry is
+buffered in RAM during each phase and written to the SD card in the silence
+gaps, so the log writes do not add SD traffic while SD streaming is under
+test.
+
+Record the last banner, **which of phases CTRL/A/A2/B/M/C/D were audible**, and the
 contents of `sdmc:/play-3ds-probe.log`. A completely blank screen means the
 app died before console init; check whether the log file was created to
 narrow how far it got.

@@ -9,9 +9,11 @@
 ## - writes a flushed line-by-line log to `sdmc:/play-3ds-probe.log`,
 ## - plays a repeated SFX beep pattern, then a music matrix: a control phase
 ##   (the known-audible sfx tone looped on the music bus) followed by
-##   A: streamed OGG, B: streamed WAV, C: preloaded OGG on the sfx bus,
-##   D: preloaded OGG on the music bus - so a silent-music failure can be
-##   attributed to content vs decoding/IO/bus by which phases are audible,
+##   A: streamed OGG (SD, music bus), A2: the same SD stream on master out,
+##   B: streamed WAV, M: streamed OGG from a RAM copy, C: preloaded OGG on
+##   the sfx bus, D: preloaded OGG on the music bus - so a silent-music
+##   failure can be attributed to content/decoding/IO/bus by which phases
+##   are audible, with per-second voice telemetry logged for each,
 ## - holds the screen long enough to read the final state before exiting
 ##   (START skips the current hold early).
 ##
@@ -28,6 +30,17 @@ import std/[monotimes, os, strutils, times]
 
 import play
 import common/assets
+
+# Diagnostic-only internals: this probe reads raw SoLoud voice telemetry
+# (stream time, visualization wave peak) and streams from memory, which the
+# public API deliberately does not expose. Regular examples must not import
+# these modules. The narrow `from` imports avoid colliding with the public
+# API's own isValid/init/shutdown overloads.
+import play/bindings/soloud_raw as rawSoloud
+from play/private/assets import audioSource
+from play/private/global_engine import currentEngine
+from play/private/lifecycle import rawHandle
+from play/private/types import rawVoiceHandle
 
 when defined(playPlatform3ds):
   # The main thread fully decodes an OGG at load time in the preloaded music
@@ -208,7 +221,9 @@ type
     sfxPlayed*: bool
     controlSfxMusicBusPlayed*: bool # control: known-audible sfx tone, looped
     musicPlayed*: bool          # phase A: streamed OGG on music bus
+    sdStreamMasterPlayed*: bool # phase A2: same SD stream, raw master out
     musicStreamedWavPlayed*: bool # phase B: streamed WAV on music bus
+    memStreamPlayed*: bool      # phase M: streamed OGG from memory, no bus
     musicPreloadedOggPlayed*: bool # phase C: preloaded OGG on sfx bus
     preloadedOggMusicBusPlayed*: bool # phase D: preloaded OGG on music bus
     failure*: string
@@ -220,6 +235,7 @@ type
     startTime: MonoTime
     clockOk: bool
     aborted: bool
+    pendingTelemetry: seq[string]
 
 proc defaultProbeConfig*(): ProbeConfig =
   when defined(playPlatform3ds):
@@ -272,9 +288,82 @@ proc log(ctx: var ProbeContext, message: string) =
 proc banner(ctx: var ProbeContext, state: string) =
   ctx.log("==== " & state & " ====")
 
+proc telemetry(ctx: var ProbeContext, message: string) =
+  ## Echoes to the console immediately but defers the SD-card write: the
+  ## streamed phases are testing SD reads from the mixer thread, and writing
+  ## the log file mid-phase would add main-thread SD traffic to the system
+  ## under test. flushTelemetry() writes the buffered lines during the
+  ## silence gap after each phase.
+  let line = "[" & $ctx.elapsedMs() & "ms] " & message
+  if ctx.config.verbose:
+    try:
+      echo line
+    except CatchableError:
+      discard
+  ctx.pendingTelemetry.add(line)
+
+proc flushTelemetry(ctx: var ProbeContext) =
+  if ctx.logOpen and ctx.pendingTelemetry.len > 0:
+    try:
+      for line in ctx.pendingTelemetry:
+        ctx.logFile.writeLine(line)
+      ctx.logFile.flushFile()
+    except CatchableError:
+      ctx.logOpen = false
+  ctx.pendingTelemetry.setLen(0)
+
 proc pause(ctx: var ProbeContext, durationMs: int) =
   if not ctx.aborted:
     ctx.aborted = not probeHold(durationMs)
+
+proc rawEngine(): rawSoloud.Soloud =
+  let engine = currentEngine()
+  if engine == nil:
+    nil
+  else:
+    engine.rawHandle()
+
+proc wavePeak(): float =
+  ## Peak of the 256-sample visualization wave buffer; an objective
+  ## "non-silent samples were mixed" signal. -1 when unavailable.
+  ## The buffer is the global post-clip mix with channels summed (values can
+  ## exceed 1.0) and the writer is not strictly synchronized with this
+  ## reader, so interpret only as zero-vs-nonzero, not as amplitude.
+  let engine = rawEngine()
+  if engine == nil:
+    return -1
+  let wave = rawSoloud.Soloud_getWave(engine)
+  if wave == nil:
+    return -1
+  let samples = cast[ptr UncheckedArray[cfloat]](wave)
+  for index in 0 ..< 256:
+    result = max(result, abs(float(samples[index])))
+
+proc monitoredPause(
+  ctx: var ProbeContext, voice: rawSoloud.VoiceHandle, totalMs: int
+) =
+  ## Pauses like `pause`, but records per-second voice telemetry: voice
+  ## liveness, wall-clock stream time (advances for any live voice; only a
+  ## frozen value is informative), loop count (increments only when the
+  ## decoder genuinely reaches the end of the stream - the true "decoder is
+  ## consuming data" signal), and mixed wave peak (zeros vs signal).
+  if totalMs <= 0:
+    return
+  var remaining = totalMs
+  while remaining > 0 and not ctx.aborted:
+    let chunk = min(1000, remaining)
+    ctx.pause(chunk)
+    remaining -= chunk
+    let engine = rawEngine()
+    if engine == nil or voice == 0:
+      continue
+    let alive = rawSoloud.Soloud_isValidVoiceHandle(engine, voice) != 0
+    let streamTime = rawSoloud.Soloud_getStreamTime(engine, voice)
+    let loops = rawSoloud.Soloud_getLoopCount(engine, voice)
+    ctx.telemetry("  voice: alive=" & $alive &
+      " streamTime=" & streamTime.formatFloat(ffDecimal, 3) &
+      "s loops=" & $loops &
+      " wavePeak=" & wavePeak().formatFloat(ffDecimal, 4))
 
 proc fail(
   ctx: var ProbeContext,
@@ -352,6 +441,7 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
     music = MusicResult()
     musicWav = MusicResult()
     oggSound = SoundResult()
+    memStream: rawSoloud.WavStream = nil
     sfxHandle = noHandle
     musicHandle = noHandle
 
@@ -366,6 +456,10 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
       return
     result.initOk = true
     ctx.log("init ok, active backend id " & $cuint(activeBackend()))
+    let visEngine = rawEngine()
+    if visEngine != nil:
+      rawSoloud.Soloud_setVisualizationEnable(visEngine, 1)
+      ctx.log("visualization enabled for wave peak telemetry")
     ctx.banner("INIT OK")
 
     try:
@@ -408,7 +502,10 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
         "load music failed: " & music.error.message)
       return
     result.musicLoaded = true
-    ctx.log("music loaded")
+    ctx.log("music loaded, stream length " &
+      rawSoloud.WavStream_getLength(
+        cast[rawSoloud.WavStream](music.music.audioSource())
+      ).formatFloat(ffDecimal, 3) & "s")
 
     ctx.banner("ASSETS OK - BEEPS STARTING")
 
@@ -438,6 +535,7 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
     # A 1 s silence gap follows each phase so the phases are separable by ear
     # (the fixtures sound identical across phases).
     template phaseGap() =
+      ctx.flushTelemetry()
       if config.musicMs > 0:
         ctx.log("phase gap (silence)")
         ctx.pause(1000)
@@ -456,7 +554,7 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
         result.controlSfxMusicBusPlayed = true
         discard setLooping(musicHandle, true)
         discard setVolume(musicHandle, 0.8'f32)
-        ctx.pause(config.musicMs)
+        ctx.monitoredPause(rawVoiceHandle(musicHandle), config.musicMs)
         discard stop(musicHandle)
         musicHandle = noHandle
       phaseGap()
@@ -470,9 +568,32 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
         result.musicPlayed = true
         discard setLooping(musicHandle, true)
         discard setVolume(musicHandle, 0.8'f32)
-        ctx.pause(config.musicMs)
+        ctx.monitoredPause(rawVoiceHandle(musicHandle), config.musicMs)
         discard stop(musicHandle)
         musicHandle = noHandle
+      phaseGap()
+
+    # Phase A2: the same SD-backed WavStream as phase A, but played raw on
+    # the master output instead of through the music bus. Together with
+    # phase M (RAM-backed, master out) this completes the
+    # {SD, RAM} x {bus, master} square so the two factors separate.
+    if not ctx.aborted:
+      ctx.banner("MUSIC A2: STREAMED OGG FROM SD, MASTER OUT - " &
+        $config.musicMs & "ms")
+      let masterEngine = rawEngine()
+      if masterEngine == nil:
+        ctx.log("FAIL: phase A2 engine unavailable")
+      else:
+        let sdVoice = rawSoloud.Soloud_play(
+          masterEngine, music.music.audioSource())
+        if sdVoice == 0:
+          ctx.log("FAIL: phase A2 play returned no voice")
+        else:
+          result.sdStreamMasterPlayed = true
+          rawSoloud.Soloud_setLooping(masterEngine, sdVoice, 1)
+          rawSoloud.Soloud_setVolume(masterEngine, sdVoice, 0.8)
+          ctx.monitoredPause(sdVoice, config.musicMs)
+          rawSoloud.Soloud_stop(masterEngine, sdVoice)
       phaseGap()
 
     if not ctx.aborted:
@@ -491,6 +612,10 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
         if not musicWav.ok:
           ctx.log("FAIL: phase B load failed: " & musicWav.error.message)
         else:
+          ctx.log("phase B stream length " &
+            rawSoloud.WavStream_getLength(
+              cast[rawSoloud.WavStream](musicWav.music.audioSource())
+            ).formatFloat(ffDecimal, 3) & "s")
           musicHandle = playMusic(musicWav.music)
           if not musicHandle.isValid:
             ctx.log("FAIL: phase B play returned invalid handle")
@@ -498,9 +623,50 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
             result.musicStreamedWavPlayed = true
             discard setLooping(musicHandle, true)
             discard setVolume(musicHandle, 0.8'f32)
-            ctx.pause(config.musicMs)
+            ctx.monitoredPause(rawVoiceHandle(musicHandle), config.musicMs)
             discard stop(musicHandle)
             musicHandle = noHandle
+      phaseGap()
+
+    # Phase M: identical decode path to phase A, but the WavStream reads
+    # from a memory copy instead of the SD card, splitting file-I/O-during-
+    # mixing from the WavStream code path itself. Played raw on the master
+    # output - the control phase already proves the buses.
+    if not ctx.aborted:
+      ctx.banner("MUSIC M: STREAMED OGG FROM MEMORY - " &
+        $config.musicMs & "ms")
+      let memEngine = rawEngine()
+      var memData = ""
+      try:
+        memData = readFile(musicPath)
+      except CatchableError:
+        discard
+      if memEngine == nil or memData.len == 0:
+        ctx.log("FAIL: phase M setup failed (engine or file read)")
+      else:
+        memStream = rawSoloud.WavStream_create()
+        if memStream == nil:
+          ctx.log("FAIL: phase M WavStream_create failed")
+        else:
+          let code = rawSoloud.WavStream_loadMemEx(
+            memStream, cast[ptr uint8](addr memData[0]),
+            cuint(memData.len), 1, 0)
+          if code != 0:
+            ctx.log("FAIL: phase M loadMem failed, code " & $code)
+          else:
+            ctx.log("phase M stream length " &
+              rawSoloud.WavStream_getLength(memStream)
+                .formatFloat(ffDecimal, 3) & "s")
+            rawSoloud.WavStream_setLooping(memStream, 1)
+            let memVoice = rawSoloud.Soloud_play(
+              memEngine, rawSoloud.AudioSource(memStream))
+            if memVoice == 0:
+              ctx.log("FAIL: phase M play returned no voice")
+            else:
+              result.memStreamPlayed = true
+              rawSoloud.Soloud_setVolume(memEngine, memVoice, 0.8)
+              ctx.monitoredPause(memVoice, config.musicMs)
+              rawSoloud.Soloud_stop(memEngine, memVoice)
       phaseGap()
 
     if not ctx.aborted:
@@ -516,7 +682,7 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
           result.musicPreloadedOggPlayed = true
           discard setLooping(sfxHandle, true)
           discard setVolume(sfxHandle, 0.8'f32)
-          ctx.pause(config.musicMs)
+          ctx.monitoredPause(rawVoiceHandle(sfxHandle), config.musicMs)
           discard stop(sfxHandle)
           sfxHandle = noHandle
       phaseGap()
@@ -534,7 +700,7 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
           result.preloadedOggMusicBusPlayed = true
           discard setLooping(musicHandle, true)
           discard setVolume(musicHandle, 0.8'f32)
-          ctx.pause(config.musicMs)
+          ctx.monitoredPause(rawVoiceHandle(musicHandle), config.musicMs)
           discard stop(musicHandle)
           musicHandle = noHandle
 
@@ -543,15 +709,19 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
       ctx.log("ABORTED BY USER - probe did not run to completion")
       return
 
+    ctx.flushTelemetry()
     ctx.log("music matrix: CTRL loopedSfxMusicBus=" &
       $result.controlSfxMusicBusPlayed &
       " A streamedOgg=" & $result.musicPlayed &
+      " A2 sdStreamMaster=" & $result.sdStreamMasterPlayed &
       " B streamedWav=" & $result.musicStreamedWavPlayed &
+      " M memStream=" & $result.memStreamPlayed &
       " C preloadedOggSfxBus=" & $result.musicPreloadedOggPlayed &
       " D preloadedOggMusicBus=" & $result.preloadedOggMusicBusPlayed)
 
     result.ok = result.sfxPlayed and result.controlSfxMusicBusPlayed and
-      result.musicPlayed and result.musicStreamedWavPlayed and
+      result.musicPlayed and result.sdStreamMasterPlayed and
+      result.musicStreamedWavPlayed and result.memStreamPlayed and
       result.musicPreloadedOggPlayed and result.preloadedOggMusicBusPlayed
     if result.ok:
       ctx.log("probe finished successfully")
@@ -577,7 +747,11 @@ proc runDs3AudioProbe*(config = defaultProbeConfig()): ProbeResult =
       musicWav.music.dispose()
     if oggSound.ok:
       oggSound.sound.dispose()
+    if memStream != nil:
+      rawSoloud.WavStream_destroy(memStream)
+      memStream = nil
     shutdown()
+    ctx.flushTelemetry()
     ctx.log("shutdown complete, exiting")
     if ctx.logOpen:
       try:

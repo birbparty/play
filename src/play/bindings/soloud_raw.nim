@@ -83,6 +83,10 @@ proc Soloud_setLooping*(aSoloud: Soloud, aVoiceHandle: VoiceHandle, aLooping: ci
 proc Soloud_getVolume*(aSoloud: Soloud, aVoiceHandle: VoiceHandle): cfloat {.importc, cdecl.}
 proc Soloud_setVolume*(aSoloud: Soloud, aVoiceHandle: VoiceHandle, aVolume: cfloat) {.importc, cdecl.}
 proc Soloud_isValidVoiceHandle*(aSoloud: Soloud, aVoiceHandle: VoiceHandle): cint {.importc, cdecl.}
+proc Soloud_getStreamTime*(aSoloud: Soloud, aVoiceHandle: VoiceHandle): cdouble {.importc, cdecl.}
+proc Soloud_getLoopCount*(aSoloud: Soloud, aVoiceHandle: VoiceHandle): cuint {.importc, cdecl.}
+proc Soloud_setVisualizationEnable*(aSoloud: Soloud, aEnable: cint) {.importc, cdecl.}
+proc Soloud_getWave*(aSoloud: Soloud): ptr cfloat {.importc, cdecl.}
 proc Soloud_setMaxActiveVoiceCount*(aSoloud: Soloud, aVoiceCount: cuint): SoloudResult {.importc, cdecl.}
 
 proc Soloud_fadeVolume*(aSoloud: Soloud, aVoiceHandle: VoiceHandle, aTo: cfloat, aTime: cdouble) {.importc, cdecl.}
@@ -118,6 +122,8 @@ proc WavStream_create*(): WavStream {.importc, cdecl.}
 proc WavStream_destroy*(aWavStream: WavStream) {.importc, cdecl.}
 proc WavStream_load*(aWavStream: WavStream, aFilename: cstring): SoloudResult {.importc, cdecl.}
 proc WavStream_loadMem*(aWavStream: WavStream, aData: ptr uint8, aDataLen: cuint): SoloudResult {.importc, cdecl.}
+proc WavStream_loadMemEx*(aWavStream: WavStream, aData: ptr uint8, aDataLen: cuint, aCopy: cint, aTakeOwnership: cint): SoloudResult {.importc, cdecl.}
+proc WavStream_getLength*(aWavStream: WavStream): cdouble {.importc, cdecl.}
 proc WavStream_loadToMem*(aWavStream: WavStream, aFilename: cstring): SoloudResult {.importc, cdecl.}
 proc WavStream_setLooping*(aWavStream: WavStream, aLoop: cint) {.importc, cdecl.}
 proc WavStream_setVolume*(aWavStream: WavStream, aVolume: cfloat) {.importc, cdecl.}
