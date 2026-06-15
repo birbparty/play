@@ -117,3 +117,4 @@ proc setVolume*(engine: Engine, handle: Handle, volume: float32): PlayResult =
 
   raw.Soloud_setVolume(soloud, handle.rawVoiceHandle, cfloat(volume))
   success()
+

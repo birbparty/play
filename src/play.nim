@@ -5,19 +5,23 @@
 ## or raw binding modules.
 
 import play/assets
+import play/backend
 import play/buses
 import play/fades
 import play/handles
 import play/lifecycle
 import play/playback
+import play/streams
 import play/types
 
 export assets
+export backend
 export buses
 export fades
 export handles
 export lifecycle
 export playback
+export streams
 export types
 
 const playVersion* = "0.1.0"
