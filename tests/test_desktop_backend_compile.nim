@@ -40,6 +40,13 @@ when isMainModule:
       "NOT_IMPLEMENTED — desktop closure is missing WITH_MINIAUDIO / " &
       "soloud_miniaudio.cpp"
 
+    # When a device actually opened (res == 0, e.g. an audio-equipped runner),
+    # the miniaudio backend reports itself as "MiniAudio" (soloud_miniaudio.cpp).
+    # Headless CI returns UNKNOWN_ERROR (res != 0) and skips this stronger check.
+    if int32(res) == 0:
+      doAssert $Soloud_getBackendString(soloud) == "MiniAudio",
+        "miniaudio device opened but backend string was not 'MiniAudio'"
+
     # The Soloud destructor (~Soloud) calls deinit(), so destroy alone cleans up
     # whether or not a device was actually opened above.
     Soloud_destroy(soloud)
