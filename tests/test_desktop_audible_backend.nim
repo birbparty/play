@@ -52,27 +52,31 @@ proc partACompiledBackendGuard() =
       expectedBackendName & " device opened but backend string was '" &
       $Soloud_getBackendString(soloud) & "'"
 
+  # The Soloud destructor (~Soloud) calls deinit(), so destroy alone cleans up
+  # whether or not a device was actually opened above.
   Soloud_destroy(soloud)
 
 proc partBAudibleAutoGate() =
+  let requireAudible = getEnv("PLAY_REQUIRE_AUDIBLE") == "1"
   let started = init(initOptions())  # SoLoud AUTO
-  if not started.ok:
-    let requireAudible = getEnv("PLAY_REQUIRE_AUDIBLE") == "1"
-    doAssert not requireAudible,
-      "PLAY_REQUIRE_AUDIBLE=1 but init(AUTO) failed: " & started.error.message
-    echo "desktop-audible: init(AUTO) failed (no device?): ", started.error.message
-    return
+  try:
+    if not started.ok:
+      doAssert not requireAudible,
+        "PLAY_REQUIRE_AUDIBLE=1 but init(AUTO) failed: " & started.error.message
+      echo "desktop-audible: init(AUTO) failed (no device?): ", started.error.message
+      return
 
-  let name = backendString()
-  let audible = isAudibleBackend()
-  echo "desktop-audible: AUTO resolved to '", name, "' (audible=", audible, ")"
+    let name = backendString()
+    let audible = isAudibleBackend()
+    echo "desktop-audible: AUTO resolved to '", name, "' (audible=", audible, ")"
 
-  if getEnv("PLAY_REQUIRE_AUDIBLE") == "1":
-    doAssert audible,
-      "PLAY_REQUIRE_AUDIBLE=1 but AUTO resolved to a silent backend '" & name &
-      "' — desktop init landed on NoSound/NULL instead of a real device"
-
-  shutdown()
+    if requireAudible:
+      doAssert audible,
+        "PLAY_REQUIRE_AUDIBLE=1 but AUTO resolved to a silent backend '" & name &
+        "' — desktop init landed on NoSound/NULL instead of a real device"
+  finally:
+    # Safe no-op when init failed / nothing was initialized.
+    shutdown()
 
 when isMainModule:
   when defined(playPlatformDesktop):

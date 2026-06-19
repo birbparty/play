@@ -88,7 +88,8 @@ After `init`, assert you actually got a device:
 ```nim
 import play
 
-discard init(initOptions())
+let started = init(initOptions())
+started.raiseIfFailed()  # an outright init failure is a different problem
 doAssert isAudibleBackend(),
   "audio is silent — AUTO resolved to " & backendString()
 ```
