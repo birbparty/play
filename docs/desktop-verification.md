@@ -23,7 +23,10 @@ bash scripts/build_desktop_examples.sh --audio
 
 That command builds all desktop examples and runs:
 
-- `examples/phase1_public_api`
+- `examples/phase1_public_api` — device-free / smoke-only: this example takes no
+  `--audio` flag and pins the `NULL` backend on desktop, so it is **not** part of
+  the audible-verification surface even under `--audio`. Audible output is proven
+  by the three examples below. See `docs/desktop-backend-decisions.md` D1.
 - `examples/bus_volume_demo --audio --quiet`
 - `examples/music_fades --audio --quiet`
 - `examples/sfx_keypress --audio --keys=sq --quiet`

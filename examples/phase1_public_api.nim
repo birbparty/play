@@ -6,7 +6,18 @@ proc logFailure(label: string, result: PlayResult) =
     echo label, ": ", result.error.message
 
 proc main() =
-  let initResult = init(initOptions())
+  # Device-free by default on desktop: this example is an API-surface smoke
+  # exercise (never run with --audio by build_desktop_examples.sh), so it must
+  # not open a real audio device once miniaudio is compiled. It parses no flags,
+  # so the desktop arm pins NULL unconditionally and stays device-free even if
+  # invoked with --audio directly — intended. Console targets keep their real
+  # backend via AUTO. Mirrors the bus_volume_demo / music_fades / sfx_keypress
+  # default-config pattern. See docs/desktop-backend-decisions.md D1.
+  when defined(playPlatform3ds) or defined(playPlatformVita):
+    let options = initOptions()
+  else:
+    let options = initOptions(backend = nullBackend)
+  let initResult = init(options)
   if not initResult.ok:
     logFailure("init", initResult)
     return
