@@ -28,10 +28,25 @@ when defined(playPlatform3ds):
 elif defined(playPlatformVita):
   {.passC: "-DWITH_VITA_HOMEBREW".}
 else:
-  {.passC: "-DWITH_NOSOUND -DWITH_NULL".}
+  {.passC: "-DWITH_NOSOUND -DWITH_NULL -DWITH_MINIAUDIO".}
 
 when defined(linux):
   {.passL: "-lstdc++".}
+
+# Desktop miniaudio link requirements, co-located for single-block rollback.
+# Kept here (not nim.cfg) so console nim c/check passes never see them. Guarded
+# by playPlatformDesktop + host OS to stay out of the console frozen-line digest.
+# miniaudio dlopen's libasound/libpulse at runtime, so -lasound is intentionally
+# not linked here (verify on a Linux target instead).
+when defined(playPlatformDesktop) and defined(linux):
+  {.passL: "-ldl -lpthread -lm".}
+# The macOS and Windows blocks below are CI-unverified: CI runs ubuntu-latest
+# only, so these link flags are exercised by manual off-CI builds. Verify them
+# on the target host when touching this block.
+when defined(playPlatformDesktop) and defined(macosx):
+  {.passL: "-framework CoreAudio -framework AudioToolbox -framework CoreFoundation".}
+when defined(playPlatformDesktop) and defined(windows):
+  {.passL: "-lole32 -lwinmm".}
 
 when defined(playPlatform3ds) or defined(playPlatformVita):
   {.passC: "-fno-exceptions -fno-rtti -std=gnu++11".}
@@ -71,6 +86,7 @@ elif defined(playPlatformVita):
 else:
   compileSoloud "backend/nosound/soloud_nosound.cpp"
   compileSoloud "backend/null/soloud_null.cpp"
+  compileSoloud "backend/miniaudio/soloud_miniaudio.cpp"
 
 # Filter wrappers referenced by the generated C API.
 compileSoloud "filter/soloud_bassboostfilter.cpp"
