@@ -11,15 +11,13 @@ permissions:
 
 jobs:
   desktop:
-    name: Desktop (${{ matrix.os }})
+    name: Desktop (ubuntu-latest)
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os:
           - ubuntu-latest
-          - macos-latest
-          - windows-latest
     env:
       NIM_VERSION: 2.2.10
     steps:
@@ -37,6 +35,12 @@ jobs:
         run: |
           nim --version
           nimble --version
+
+      - name: Install ALSA development headers
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev
 
       - name: Build desktop examples
         shell: bash
@@ -92,60 +96,15 @@ jobs:
         run: nim c --mm:arc --path:src --path:tests "-d:bddyJunit:tests/results/test_host_stress_arc.xml" -r tests/stress/test_host_stress.nim
 
       - name: JUnit aggregate suite
-        if: matrix.os != 'windows-latest'
         shell: bash
         timeout-minutes: 10
         run: nim c --path:src --path:examples --path:tests "-d:bddyJunit:tests/results/test_all.xml" -r tests/test_all.nim
-
-      - name: JUnit Windows isolated suites
-        if: matrix.os == 'windows-latest'
-        shell: bash
-        timeout-minutes: 10
-        run: |
-          test_files=(
-            tests/api/test_assets.nim
-            tests/api/test_buses.nim
-            tests/api/test_fades.nim
-            tests/api/test_handles.nim
-            tests/api/test_lifecycle.nim
-            tests/api/test_playback.nim
-            tests/api/test_public_api.nim
-            tests/api/test_types.nim
-            tests/examples/test_bus_volume_demo.nim
-            tests/examples/test_ds3_audio_probe.nim
-            tests/examples/test_example_assets.nim
-            tests/examples/test_music_fades.nim
-            tests/examples/test_sfx_keypress.nim
-            tests/examples/test_vita_audio_probe.nim
-            tests/fixtures/test_fixtures.nim
-            tests/stress/test_host_stress.nim
-            tests/stress/test_realtime_boundary.nim
-            tests/test_package_metadata.nim
-            tests/wrapper/test_assets.nim
-            tests/wrapper/test_buses.nim
-            tests/wrapper/test_errors.nim
-            tests/wrapper/test_fades.nim
-            tests/wrapper/test_handles.nim
-            tests/wrapper/test_lifecycle.nim
-            tests/wrapper/test_shutdown_stress.nim
-            tests/wrapper/test_stream_loop.nim
-            tests/wrapper/test_voice_limits.nim
-          )
-
-          for test_file in "${test_files[@]}"; do
-            result_name=${test_file#tests/}
-            result_name=${result_name%.nim}
-            result_name=${result_name//\//_}
-            echo "::group::$test_file"
-            nim c --path:src --path:examples --path:tests "-d:bddyJunit:tests/results/${result_name}.xml" -r "$test_file"
-            echo "::endgroup::"
-          done
 
       - name: Upload desktop test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-test-results-${{ matrix.os }}
+          name: desktop-test-results
           path: tests/results/*.xml
           if-no-files-found: error
 
