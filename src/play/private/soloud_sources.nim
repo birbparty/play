@@ -27,6 +27,13 @@ when defined(playPlatform3ds):
   {.passC: "-DWITH_CTRU_NDSP".}
 elif defined(playPlatformVita):
   {.passC: "-DWITH_VITA_HOMEBREW".}
+elif defined(macosx):
+  # macOS: SoLoud's native CoreAudio (AudioToolbox AudioQueue) backend. The
+  # bundled miniaudio is from ~2020 and its ma_device_init returns MA_NO_BACKEND
+  # (-103) on Apple Silicon, so AUTO falls through to NOSOUND and the app is
+  # silent. The native CoreAudio backend uses the long-stable AudioQueue API and
+  # works on Apple Silicon. AudioToolbox is already linked for macOS below.
+  {.passC: "-DWITH_NOSOUND -DWITH_NULL -DWITH_COREAUDIO".}
 else:
   {.passC: "-DWITH_NOSOUND -DWITH_NULL -DWITH_MINIAUDIO".}
 
@@ -40,9 +47,11 @@ when defined(linux):
 # not linked here (verify on a Linux target instead).
 when defined(playPlatformDesktop) and defined(linux):
   {.passL: "-ldl -lpthread -lm".}
-# The macOS and Windows blocks below are CI-unverified: CI runs ubuntu-latest
-# only, so these link flags are exercised by manual off-CI builds. Verify them
-# on the target host when touching this block.
+# macOS is now exercised by the desktop-audible-backend CI job (macos-latest),
+# which builds this closure and asserts AUTO resolves to an audible backend, so
+# the CoreAudio/AudioToolbox link block is CI-covered. The Windows block remains
+# best-effort (windows-latest runs continue-on-error); verify it on the target
+# host when touching it.
 when defined(playPlatformDesktop) and defined(macosx):
   {.passL: "-framework CoreAudio -framework AudioToolbox -framework CoreFoundation".}
 when defined(playPlatformDesktop) and defined(windows):
@@ -83,6 +92,10 @@ when defined(playPlatform3ds):
   compileSoloud "backend/ctru_ndsp/soloud_ctru_ndsp.cpp"
 elif defined(playPlatformVita):
   compileSoloud "backend/vita_homebrew/soloud_vita_homebrew.cpp"
+elif defined(macosx):
+  compileSoloud "backend/nosound/soloud_nosound.cpp"
+  compileSoloud "backend/null/soloud_null.cpp"
+  compileSoloud "backend/coreaudio/soloud_coreaudio.cpp"
 else:
   compileSoloud "backend/nosound/soloud_nosound.cpp"
   compileSoloud "backend/null/soloud_null.cpp"

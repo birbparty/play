@@ -24,6 +24,8 @@ tests/test_soloud_compile
 tests/test_soloud_compile.exe
 tests/test_desktop_backend_compile
 tests/test_desktop_backend_compile.exe
+tests/test_desktop_audible_backend
+tests/test_desktop_audible_backend.exe
 tests/bindings/test_soloud_raw
 tests/bindings/test_soloud_raw.exe
 tests/bindings/test_backends
@@ -48,6 +50,8 @@ tests/api/test_lifecycle
 tests/api/test_lifecycle.exe
 tests/api/test_assets
 tests/api/test_assets.exe
+tests/api/audible_backend_spec
+tests/api/audible_backend_spec.exe
 tests/api/test_buses
 tests/api/test_buses.exe
 tests/api/test_fades

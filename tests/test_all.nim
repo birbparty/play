@@ -1,5 +1,6 @@
 {.warning[UnusedImport]: off.}
 import api/assets_spec
+import api/audible_backend_spec
 import api/buses_spec
 import api/fades_spec
 import api/handles_spec

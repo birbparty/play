@@ -12,11 +12,12 @@ permissions:
 jobs:
   desktop:
     name: Desktop (ubuntu-latest)
-    # Single-element matrix kept intentionally as a seam for re-adding
-    # macos-latest / windows-latest later (see bd play-* CI-coverage follow-up).
-    # macOS/Windows desktop builds — including the CoreAudio and ole32/winmm
-    # passL blocks in src/play/private/soloud_sources.nim — are currently
-    # verified manually off-CI and are NOT exercised here.
+    # This job owns the Linux device-free coverage (null-backend smoke +
+    # MiniAudio compile guard). macOS audible-backend coverage lives in the
+    # separate `desktop-audible-backend` job below, so the Linux-specific steps
+    # here (ALSA install, MiniAudio guard) stay free of per-OS conditionals. The
+    # Windows desktop passL block in src/play/private/soloud_sources.nim is still
+    # best-effort (exercised continue-on-error in that job).
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -123,6 +124,72 @@ jobs:
           name: desktop-test-results
           path: tests/results/*.xml
           if-no-files-found: error
+
+  desktop-audible-backend:
+    # Asserts that desktop `init(AUTO)` resolves to an AUDIBLE backend (not the
+    # silent NoSound fallback) on each desktop OS that ships an audio device.
+    # This is the regression gate for the macOS CoreAudio backend fix: a future
+    # backend reorder, miniaudio bump, or dropped framework that re-introduced
+    # silent NoSound would fail here instead of shipping silently.
+    #
+    # macOS is a HARD gate: every step here is blocking, and with
+    # PLAY_REQUIRE_AUDIBLE=1 the test hard-asserts init(AUTO) is audible
+    # (GitHub's macOS runners expose a CoreAudio device).
+    #
+    # Windows is fully OBSERVATIONAL, not a gate: the whole leg is
+    # `continue-on-error`, so NOTHING here is enforced on Windows — not the build,
+    # not the device-free Part A compiled-backend guard, not Part B. The Windows
+    # desktop build/link path (ole32/winmm in soloud_sources.nim) has never been
+    # verified in CI, so failures surface as annotations a maintainer reviews
+    # rather than blocking merges. Promote Windows to a gate (drop its
+    # continue-on-error, set require_audible) once it is observed reliably green.
+    # (Note: Windows sets require_audible: "" so Part B is non-asserting there
+    # regardless; the continue-on-error is what also softens build + Part A.)
+    #
+    # ROLLBACK LEVER: if macos-latest ever fails to open CoreAudio reliably, set
+    # its `require_audible` to "" below to demote Part B to informational while
+    # Part A (the device-free compiled-backend guard) stays enforced on macOS.
+    name: Desktop audible backend (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            require_audible: "1"
+          - os: windows-latest
+            require_audible: ""
+    env:
+      NIM_VERSION: 2.2.10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: ${{ env.NIM_VERSION }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show Nim toolchain
+        shell: bash
+        run: |
+          nim --version
+          nimble --version
+
+      - name: Build desktop examples (compile closure on this OS)
+        shell: bash
+        run: bash scripts/build_desktop_examples.sh --smoke
+
+      - name: Assert desktop AUTO resolves to an audible backend
+        shell: bash
+        # Part A (always): compiled-backend-set guard, device-free. Part B
+        # (gated by PLAY_REQUIRE_AUDIBLE): hard-asserts init(AUTO) is audible on
+        # macOS; informational elsewhere.
+        env:
+          PLAY_REQUIRE_AUDIBLE: ${{ matrix.require_audible }}
+        run: nim c --path:src -r tests/test_desktop_audible_backend.nim
 
   nintendo-3ds-examples:
     name: Nintendo 3DS example cross-compile
