@@ -65,8 +65,12 @@ let initResult = init(options)
 ```
 
 This is the same shape `bus_volume_demo` / `music_fades` / `sfx_keypress` already
-use in their default config (`bus_volume_demo.nim:20-23`, etc.): console keeps its
-real backend through AUTO, desktop pins `nullBackend`.
+use in their default config (copy from `bus_volume_demo.nim:20-23` as the
+template): console keeps its real backend through AUTO, desktop pins
+`nullBackend`. `nullBackend` reaches `import play` callers via
+`src/play/lifecycle.nim:10` (`export defaultBackend, noSoundBackend,
+nullBackend`), which `play.nim` re-exports at `:22` (`export lifecycle`) — not via
+a direct `export backends` in `play.nim`.
 
 **Why the per-example pin, and not the env-var override originally sketched
 here:** the env-var idea rested on the premise that `phase1_public_api` is built
