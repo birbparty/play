@@ -160,3 +160,29 @@ Captured with the CI-pinned Nim version (currently `2.2.10`, per the
 `NIM_VERSION` env in `.github/workflows/ci.yml`) on macOS arm64. All four exited
 `0` with a final `[SuccessX]` hint and no errors. This is the green baseline
 play-6h6 must reproduce after the desktop change lands.
+
+---
+
+## 4. Post-change confirmation (play-6h6)
+
+The desktop miniaudio backend landed in ralph iteration 54 (merge `cf4f128`,
+tasks play-xxu / play-f5z / play-1nf). play-6h6 re-ran the regression recipe on
+the post-change tree (Nim `2.2.10`, macOS arm64):
+
+- **Console frozen-line digest** (section 2 recipe): recomputed to
+  `d485539d56b9fb709047d635ab471857fd00feaad09ade61e9ea60c59cc02c41`, exactly 12
+  lines — **identical** to the pre-change baseline. The 3ds/vita `passC`,
+  backend `compile`, console C++ flags, and `soloud_openmpt_stub` blocks are
+  byte-for-byte unchanged; only the desktop `else:` arms gained `WITH_MINIAUDIO`
+  and the `soloud_miniaudio.cpp` compile line, plus the host-OS-guarded desktop
+  `passL` blocks (which the grep pattern does not match).
+- **Four console `nim check` guards** (section 3): all four exited `0` with a
+  final `[SuccessX]` hint and no errors — **green**, matching the pre-change
+  baseline.
+
+Result: **no console regression.** The desktop backend change is confined to the
+desktop arms; the frozen console contract holds.
+
+> The full-file digest (section 2, informational) is expected to differ now that
+> the desktop arms changed — that is not a regression signal. Only the console
+> frozen-line digest above gates this check, and it matches.
