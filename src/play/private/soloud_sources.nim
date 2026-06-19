@@ -40,6 +40,9 @@ when defined(linux):
 # not linked here (verify on a Linux target instead).
 when defined(playPlatformDesktop) and defined(linux):
   {.passL: "-ldl -lpthread -lm".}
+# The macOS and Windows blocks below are CI-unverified: CI runs ubuntu-latest
+# only, so these link flags are exercised by manual off-CI builds. Verify them
+# on the target host when touching this block.
 when defined(playPlatformDesktop) and defined(macosx):
   {.passL: "-framework CoreAudio -framework AudioToolbox -framework CoreFoundation".}
 when defined(playPlatformDesktop) and defined(windows):

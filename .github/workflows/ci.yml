@@ -12,6 +12,11 @@ permissions:
 jobs:
   desktop:
     name: Desktop (ubuntu-latest)
+    # Single-element matrix kept intentionally as a seam for re-adding
+    # macos-latest / windows-latest later (see bd play-* CI-coverage follow-up).
+    # macOS/Windows desktop builds — including the CoreAudio and ole32/winmm
+    # passL blocks in src/play/private/soloud_sources.nim — are currently
+    # verified manually off-CI and are NOT exercised here.
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -38,6 +43,10 @@ jobs:
 
       - name: Install ALSA development headers
         shell: bash
+        # ALSA headers (alsa/asoundlib.h) are needed at COMPILE time for
+        # soloud_miniaudio.cpp's WITH_MINIAUDIO path. sudo is required on the
+        # bare ubuntu-latest runner (unlike the root-context 3DS/Vita container
+        # jobs, which call apt-get/apk without sudo).
         run: |
           sudo apt-get update
           sudo apt-get install -y libasound2-dev
