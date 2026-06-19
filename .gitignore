@@ -67,6 +67,10 @@ tests/stress/test_host_stress.exe
 tests/results/
 stubs/*.a
 
+# Agent working artifacts: /ralph writes reviews here and requires them untracked;
+# handoffs are local session notes. Keep the whole tree out of git.
+.agents/
+
 # Beads / Dolt files (added by bd init)
 .dolt/
 *.db
