@@ -2,10 +2,10 @@
 
 This file is the **pre-change snapshot** captured before enabling the desktop
 miniaudio backend (`WITH_MINIAUDIO`). It exists so the regression task
-(**play-6h6**) can confirm — byte-for-byte — that the Nintendo 3DS
-(`WITH_CTRU_NDSP`) and PS Vita (`WITH_VITA_HOMEBREW`) console branches in
-`src/play/private/soloud_sources.nim` are **completely unchanged** by the desktop
-work. The desktop `else:` arms *are* expected to change; the console arms are not.
+(**play-6h6**) can confirm — byte-for-byte — that the **frozen console lines** for
+Nintendo 3DS (`WITH_CTRU_NDSP`) and PS Vita (`WITH_VITA_HOMEBREW`) in
+`src/play/private/soloud_sources.nim` are unchanged by the desktop work. The
+desktop `else:` arms *are* expected to change; the console arms are not.
 
 Captured on the iteration branch off `main` **before** any desktop edit
 (play-xxu / play-f5z) lands.
@@ -64,9 +64,10 @@ else:
 
 ### Anchor C — OpenMPT stub block
 
-Locate by the **second** `when defined(playPlatform3ds) or defined(playPlatformVita):`
-in the file (the one whose body is `{.compile: sourceDir / "soloud_openmpt_stub.c".}`).
-The console arm must stay frozen.
+Locate by the body line `{.compile: sourceDir / "soloud_openmpt_stub.c".}` — the
+`when defined(playPlatform3ds) or defined(playPlatformVita):` block that compiles
+the OpenMPT stub (distinct from the `-fno-exceptions` flags block in Anchor A2,
+which shares the same guard expression). The console arm must stay frozen.
 
 ```nim
 when defined(playPlatform3ds) or defined(playPlatformVita):
@@ -99,7 +100,9 @@ when defined(playPlatform3ds) or defined(playPlatformVita):
 ```
 
 **play-6h6 verification recipe** — re-run this exact command on the post-change
-tree and confirm the digest matches:
+tree and confirm it prints **exactly 12 lines** and the digest matches. Linux CI
+runners/containers can substitute `sha256sum` for `shasum -a 256` and get an
+identical digest.
 
 ```bash
 grep -E 'playPlatform3ds|playPlatformVita|WITH_CTRU_NDSP|WITH_VITA_HOMEBREW|fno-exceptions|ctru_ndsp/soloud_ctru_ndsp|vita_homebrew/soloud_vita_homebrew|soloud_openmpt_stub' \
@@ -109,10 +112,30 @@ grep -E 'playPlatform3ds|playPlatformVita|WITH_CTRU_NDSP|WITH_VITA_HOMEBREW|fno-
 | Artifact | SHA-256 (pre-change baseline) |
 |---|---|
 | Console frozen-line extract (command above) | `d485539d56b9fb709047d635ab471857fd00feaad09ade61e9ea60c59cc02c41` |
-| Full `soloud_sources.nim` (reference only — *will* change) | `fc0bbbdcb42fe9e9d341c56b6fb2bcc4ff8902be8fd8fa9b1d3c29adfd529397` |
 
 If the console frozen-line digest differs after the desktop change, the console
-branches were disturbed — investigate before merging.
+arms were disturbed — investigate before merging. For a stronger structural check
+than the grep alone, also diff the four verbatim anchor blocks in section 1
+against the post-change file.
+
+> **Caveat — keep desktop edits out of the grep pattern.** The digest only stays
+> comparable while (a) the grep alternation above is unchanged and (b) the
+> desktop additions in play-xxu / play-f5z live strictly in the `else:` / `elif`
+> arms. In particular, do **not** introduce a *negated* desktop guard such as
+> `when not (defined(playPlatform3ds) or defined(playPlatformVita)):` — that line
+> contains both platform symbols, would be pulled into the grep extract, and would
+> trip a false console-regression alarm even though the console arms are untouched.
+> Use `playPlatformDesktop` / host-OS conditionals (`when defined(linux)` etc.)
+> for desktop guards instead. If a pattern change or a negated guard is genuinely
+> unavoidable, regenerate this digest in the same commit, record the justifying
+> task ID, and treat that as an intentional re-baseline — not a regression.
+
+**Full-file digest (informational — NOT a pass/fail signal).** As a whole-file
+tamper/sanity anchor only, `soloud_sources.nim` hashed to
+`fc0bbbdcb42fe9e9d341c56b6fb2bcc4ff8902be8fd8fa9b1d3c29adfd529397` at capture.
+This **is expected to change** once the desktop backend lands — a mismatch here is
+normal and is not a regression signal. Only the console frozen-line digest above
+gates the regression.
 
 ---
 
@@ -133,6 +156,7 @@ into these console guards).
 | 3 | `nim check --path:src -d:playPlatformVita tests/bindings/test_backends.nim` | ✅ `SuccessX` (exit 0) |
 | 4 | `nim check --path:src -d:playPlatform3ds tests/bindings/test_backends.nim` | ✅ `SuccessX` (exit 0) |
 
-Captured with Nim 2.2.10 (macOS arm64). All four exited `0` with a final
-`[SuccessX]` hint and no errors. This is the green baseline play-6h6 must
-reproduce after the desktop change lands.
+Captured with the CI-pinned Nim version (currently `2.2.10`, per the
+`NIM_VERSION` env in `.github/workflows/ci.yml`) on macOS arm64. All four exited
+`0` with a final `[SuccessX]` hint and no errors. This is the green baseline
+play-6h6 must reproduce after the desktop change lands.
