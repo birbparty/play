@@ -49,63 +49,59 @@ automatic real→NULL fallback to the library `init` path (option a is rejected)
   (`src/play/backend.nim:35`) already exists precisely to drive a NULL/noSound
   backend in tests, so this aligns with current test infrastructure.
 
-### Recommended mechanism (for play-sx9 to implement)
+### Chosen mechanism (implemented in play-sx9)
 
-A **desktop-only environment-variable override** honored by backend selection,
-set by the CI smoke step and by `build_desktop_examples.sh --smoke`:
+Pin `nullBackend` directly in the one unprotected example,
+`examples/phase1_public_api.nim`, mirroring the established sibling pattern — do
+**NOT** add an env var, a `-d:` define, or any change to
+`platformDefaultBackend()` / `initOptions()` in `backends.nim`.
 
-- Proposed env var: `PLAY_FORCE_NULL_BACKEND` (any non-empty value ⇒ force
-  `nullBackend`).
-- Honored in `platformDefaultBackend()` (`backends.nim:56`), and specifically the
-  env read must live **inside the desktop `else:` arm** (`backends.nim:61-62`),
-  not before/around the `when` block — so it is structurally impossible for the
-  override to alter the `playPlatformVita` / `vitaHomebrewBackend` (`:57-58`) or
-  `playPlatform3ds` / `ctruNdspBackend` (`:59-60`) arms. Because `initOptions()`
-  (`backends.nim:64-65`) already funnels its `backend` default through
-  `platformDefaultBackend()`, placing the override there automatically covers all
-  bare-`initOptions()` callers — no need to touch `initOptions()` itself.
-- **`std/os` footgun:** `getEnv`/`existsEnv` require `import std/os`, which
-  `backends.nim` does **not** currently import (it imports only
-  `play/bindings/soloud_raw`, `:6`). play-sx9 must either confirm `std/os`
-  compiles cleanly under the `playPlatformVita` / `playPlatform3ds` toolchains
-  (re-run the four ci.yml console `nim check` guards) **or** gate the import with
-  `when not (defined(playPlatformVita) or defined(playPlatform3ds))` so it is
-  never pulled into a console build.
-- CI sets `PLAY_FORCE_NULL_BACKEND=1` on the `--smoke` step; the `--audio` path
-  leaves it unset so AUTO→miniaudio stays audible.
+```nim
+when defined(playPlatform3ds) or defined(playPlatformVita):
+  let options = initOptions()                       # console: real backend via AUTO
+else:
+  let options = initOptions(backend = nullBackend)  # desktop: device-free
+let initResult = init(options)
+```
 
-**Smoke blast radius (which examples the override actually affects):**
-`build_desktop_examples.sh --smoke` runs four examples (`script:59-62`):
-`phase1_public_api`, `bus_volume_demo`, `music_fades`, `sfx_keypress`. Only
-`phase1_public_api` uses a bare `initOptions()` (AUTO) and is therefore at risk
-once miniaudio compiles — it is the sole binary the override is load-bearing for.
-The other three already pin `nullBackend` explicitly in their desktop `else:` arm
-(`bus_volume_demo.nim:23`, `music_fades.nim:24`, `sfx_keypress.nim:27`), so they
-are device-free independent of the env var. Any **new** smoke example added with a
-bare `initOptions()` will silently depend on `PLAY_FORCE_NULL_BACKEND` too —
-prefer pinning `nullBackend` explicitly in such examples' smoke arm to keep the
-override's reach minimal and obvious.
+This is the same shape `bus_volume_demo` / `music_fades` / `sfx_keypress` already
+use in their default config (`bus_volume_demo.nim:20-23`, etc.): console keeps its
+real backend through AUTO, desktop pins `nullBackend`.
 
-**Why an env var rather than a `-d:` compile define or per-call
-`initOptions(backend=nullBackend)`:**
+**Why the per-example pin, and not the env-var override originally sketched
+here:** the env-var idea rested on the premise that `phase1_public_api` is built
+once and run in **both** `--smoke` and `--audio` modes, needing a runtime switch
+to stay audible under `--audio`. That premise is false:
+`build_desktop_examples.sh` runs `phase1_public_api` with **no `--audio` flag in
+either** mode (`script:59` smoke, `script:66` audio) — it is purely an
+API-surface smoke exercise and is never meant to be audible. With nothing to
+differentiate at runtime, the simplest correct fix is to pin `nullBackend`
+unconditionally on the desktop arm. This also avoids the costs the env-var path
+carried: no `import std/os` (which `backends.nim` does not have and which would
+need console-gating), no env-var read in the library core, and no CI env wiring.
 
-- `examples/phase1_public_api` is **built once** and run in **both** the
-  `--smoke` and `--audio` modes (`build_desktop_examples.sh:59` and `:66` both run
-  it). A compile-time `-d:playForceNullBackend` cannot differentiate the two runs
-  of the same binary; a runtime switch can.
-- Hardcoding `initOptions(backend = nullBackend)` in the example would force NULL
-  even in `--audio` mode, defeating audible verification.
-- Reading a desktop audio-driver override from the environment is idiomatic for
-  audio backends (cf. `SDL_AUDIODRIVER`), and centralizing it in
-  `platformDefaultBackend()` keeps the switch in one guarded place.
+**Blast radius:** `--smoke` runs four examples (`script:59-62`). The other three
+already pin `nullBackend` on their desktop `else:` arm
+(`bus_volume_demo.nim:23`, `music_fades.nim:24`, `sfx_keypress.nim:27`) and only
+go AUTO under an explicit `--audio` arg. `phase1_public_api` was the sole
+bare-AUTO caller; after this change all four smoke binaries are device-free on
+desktop. Any **new** smoke example must likewise pin `nullBackend` on its no-flag
+desktop arm rather than rely on a bare `initOptions()`.
+
+> **Audible verification is unaffected.** Real desktop audio output is verified
+> through the other three examples run with `--audio` (which resolve AUTO →
+> miniaudio once play-xxu compiles it). `phase1_public_api` is not part of the
+> audible-verification surface.
 
 ### Consequence for downstream beads
 
-- **play-sx9** implements this env-var override + wires the CI/`--smoke` step.
+- **play-sx9** pins `nullBackend` in `phase1_public_api` (done). No `backends.nim`
+  / CI / env changes.
 - **play-xxu** (enable miniaudio) must land with play-sx9 (or after it) so CI
   never runs AUTO→miniaudio on a headless runner.
-- **play-4gh** verifies the full host suite + smoke pass green on the forced-NULL
-  path.
+- **play-4gh** verifies the full host suite + smoke pass green on the device-free
+  NULL path.
+- **play-d8q** owns keeping `--smoke` device-free and `--audio` audible end-to-end.
 
 ---
 
