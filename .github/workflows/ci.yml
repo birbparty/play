@@ -75,6 +75,13 @@ jobs:
         shell: bash
         run: nim c --path:src tests/test_soloud_compile.nim
 
+      - name: Desktop miniaudio backend compile guard
+        shell: bash
+        # Proves WITH_MINIAUDIO (soloud_miniaudio.cpp + miniaudio.h) is compiled
+        # into the desktop closure. Needs libasound2-dev (installed above) but no
+        # audio device. Runs (-r) to assert the backend is wired, not just built.
+        run: nim c --path:src -r tests/test_desktop_backend_compile.nim
+
       - name: JUnit raw binding tests
         shell: bash
         run: nim c --path:src -r tests/bindings/test_soloud_raw.nim

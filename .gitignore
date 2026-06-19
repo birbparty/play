@@ -22,6 +22,8 @@ tests/test_all
 tests/test_all.exe
 tests/test_soloud_compile
 tests/test_soloud_compile.exe
+tests/test_desktop_backend_compile
+tests/test_desktop_backend_compile.exe
 tests/bindings/test_soloud_raw
 tests/bindings/test_soloud_raw.exe
 tests/bindings/test_backends
