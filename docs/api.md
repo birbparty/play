@@ -38,6 +38,32 @@ withPlay(initOptions(), proc () =
 `init` returns a `PlayResult`. It does not raise by default.
 `raiseIfFailed(result)` converts failed results into `PlayException`.
 
+### Confirming you got an audible device
+
+`init(initOptions()).ok == true` does **not** guarantee sound comes out. On
+desktop the default backend is SoLoud `AUTO`, which walks its compiled backend
+chain and, if every real backend fails to open a device, lands on **NoSound** —
+a fully-functional but silent backend that still reports success and a 44100 Hz
+sample rate. `activeBackend() != nullBackend` does not catch it, because NoSound
+is a distinct backend from the NULL driver.
+
+Use `isAudibleBackend()` after `init` to assert you actually opened a device:
+
+```nim
+let started = init(initOptions())
+started.raiseIfFailed()
+if not isAudibleBackend():
+  echo "warning: audio is silent — AUTO resolved to ", backendString()
+```
+
+- `isAudibleBackend(): bool` — `true` unless the resolved backend is the silent
+  `noSoundBackend` or `nullBackend`. It is a denylist, so audible console
+  backends (Vita/3DS homebrew) are reported correctly. Returns `false` before
+  `init` and after `shutdown`.
+- `backendString(): string` — the backend name SoLoud reports
+  (`"CoreAudio"`, `"MiniAudio"`, `"NoSound"`, `"null driver"`, …), or `""` when
+  not initialized. Handy for logging what `AUTO` selected.
+
 ## Assets
 
 `loadSound` loads resident sound effects. `loadMusic` loads streamed music.

@@ -73,3 +73,27 @@ verifies that a bare consumer outside this repository can compile through
 `nim c` with only `--path` injection, including a console-style config profile,
 and that compiler output uses `play/vendor/soloud/...` even when the consumer
 contains its own `vendor/soloud` directory.
+
+## Verifying audible output after `init`
+
+On desktop, the default backend is SoLoud `AUTO`. If no real audio device can be
+opened, `AUTO` falls back to **NoSound** — a silent backend that still makes
+`init(initOptions()).ok == true`, a valid music handle, and `backendSamplerate()
+== 44100`. A working device and a silent fallback are indistinguishable unless
+you check explicitly, and the obvious `activeBackend() != nullBackend` guard does
+**not** catch it (NoSound is a separate backend from the NULL driver).
+
+After `init`, assert you actually got a device:
+
+```nim
+import play
+
+discard init(initOptions())
+doAssert isAudibleBackend(),
+  "audio is silent — AUTO resolved to " & backendString()
+```
+
+`isAudibleBackend()` is a denylist (`false` only for `noSoundBackend` /
+`nullBackend`), so it also reports audible Vita/3DS homebrew backends correctly.
+`backendString()` returns the resolved backend name for logging. See
+`docs/api.md` for details.
